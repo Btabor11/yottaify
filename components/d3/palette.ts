@@ -5,7 +5,7 @@
    read. The scenes are therefore given both poles and interpolate themselves,
    so the canvas travels with the page rather than lagging behind it.
 
-   Entries annotated with a `--token` comment must match `app/d3/d3.css`
+   Entries annotated with a `--token` comment must match `app/(site)/d3.css`
    exactly; `scripts/audit.mjs` fails the build if they drift.
 --------------------------------------------------------------------------- */
 

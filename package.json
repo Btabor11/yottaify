@@ -8,7 +8,22 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "verify:identity": "node scripts/verify-identity.mjs"
+    "audit": "node scripts/audit.mjs",
+    "verify:identity": "node scripts/verify-identity.mjs",
+    "verify:schema": "node --experimental-strip-types --import ./scripts/alias-loader.mjs scripts/validate-check.mjs",
+    "verify:contrast": "node scripts/contrast.mjs",
+    "shot": "node scripts/shot.mjs",
+    "check:drift": "node scripts/drift.mjs",
+    "check:scroll": "node scripts/scroll.mjs",
+    "check:sweep": "node scripts/sweep.mjs",
+    "check:shader": "node scripts/shader-probe.mjs",
+    "perf": "node scripts/perf.mjs",
+    "perf:bundle": "node scripts/bundle.mjs",
+    "perf:chunks": "node scripts/chunks.mjs",
+    "perf:critical": "node scripts/critical.mjs",
+    "perf:tasks": "node scripts/tasks.mjs",
+    "perf:profile": "node scripts/profile.mjs",
+    "verify": "npm run typecheck && npm run lint && npm run audit && npm run verify:identity && npm run verify:schema"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",

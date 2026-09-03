@@ -11,7 +11,7 @@ import { assertHardware, launchGpu } from "./launch.mjs";
 
 const PORT = process.env.PORT ?? "4320";
 const base = `http://127.0.0.1:${PORT}`;
-const route = process.argv[2] ?? "/d1";
+const route = process.argv[2] ?? "/";
 const window_ms = Number(process.argv[3] ?? 6000);
 
 const browser = await launchGpu();

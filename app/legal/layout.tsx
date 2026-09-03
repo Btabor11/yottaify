@@ -41,7 +41,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
 
       <header className="mx-auto max-w-[68rem] px-6 pt-10 md:px-10">
         <Link
-          href={`/${SITE.frontRunner}`}
+          href="/"
           className="font-[family-name:var(--fm)] text-[0.75rem] uppercase tracking-[0.2em] text-[var(--ink-2)] transition-colors hover:text-[var(--ink)]"
         >
           ← {SITE.name}

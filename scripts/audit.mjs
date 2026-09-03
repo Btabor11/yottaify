@@ -146,7 +146,6 @@ function check(label, hits) {
     [hw, "15", "dense FP4 high = 15 PFLOPS"],
     [hw, "1,000", "TDP low = 1,000 W"],
     [hw, "1,400", "TDP high = 1,400 W"],
-    [hw, "160", "SM count ~160"],
     [hw, "18", "NVLink 5 links = 18"],
     [hw, "1.8 TB/s", "NVLink bandwidth ~1.8 TB/s"],
     [hw, "2304", "node HBM = 2,304 GB"],
@@ -295,9 +294,27 @@ function check(label, hits) {
     if (!url) bad2.push(`source "${id}" does not declare a url (use null if first-party)`);
     else if (NEEDS_URL.includes(kind) && !url.startsWith('"http'))
       bad2.push(`source "${id}" is ${kind} and must carry a public URL`);
+
+    // A URL proves a citation EXISTS. `quotes` is what makes it CHECKABLE:
+    // the literal figures read off that page, plus any arithmetic applied.
+    //
+    // This check exists because the previous version passed while five specs
+    // cited an NVIDIA marketing page that published none of them. A structural
+    // check that only asks "is there a link?" certifies that failure as fine.
+    if (url && url.startsWith('"http')) {
+      const quotes = body.match(/quotes:\s*\[([\s\S]*?)\]/)?.[1] ?? "";
+      const items = [...quotes.matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+      if (items.length === 0)
+        bad2.push(
+          `source "${id}" has a URL but no quotes[] — record the figures actually read off that page`
+        );
+      for (const q of items) {
+        if (!/\d/.test(q)) bad2.push(`source "${id}" quote carries no figure: "${q}"`);
+      }
+    }
   }
   if (!entries.length) bad2.push("could not parse SOURCES — check the shape of content/sources.ts");
-  check("every source resolves and carries a URL, publisher and date", bad2);
+  check("every external source records the figures actually read off the page", bad2);
 }
 
 /* ---- 8. motion base state is the final state --------------------------- */
@@ -366,7 +383,9 @@ function check(label, hits) {
     if (!/method="post"/.test(s)) hits.push(`${f} has no native POST fallback`);
     if (!/noValidate/.test(s)) hits.push(`${f} does not hand validation to the app`);
   }
-  if (forms.length !== 3) hits.push(`expected 3 form components, found ${forms.length}`);
+  // One form now: the site has a single direction. Kept as an assertion so a
+  // silent rename of Console.tsx cannot make this whole check vacuously pass.
+  if (forms.length !== 1) hits.push(`expected 1 form component, found ${forms.length}`);
   check("reservation form works without motion or JS", hits);
 }
 

@@ -11,10 +11,10 @@ import { D3Footer } from "@/components/d3/Footer";
 export const metadata: Metadata = {
   title: META.home.title,
   description: META.home.description,
-  alternates: { canonical: "/d3" },
+  alternates: { canonical: "/" },
 };
 
-export default function D3Page() {
+export default function HomePage() {
   return (
     <>
       <D3Nav />

@@ -4,10 +4,9 @@ import { META } from "@/content";
 import "./globals.css";
 
 /**
- * Root layout loads NO fonts on purpose. Each design direction (and the legal
- * section) loads only its own faces, so /d1 never pays to download /d2's
- * typography. The body falls back to a system stack until a direction binds
- * --fb, which only matters for the `/` redirect itself.
+ * Root layout loads NO fonts on purpose. The site route group and the legal
+ * section each load only the faces they use, so /legal does not pay to
+ * download the display faces the marketing pages need.
  */
 
 export const metadata: Metadata = {

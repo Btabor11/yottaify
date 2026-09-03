@@ -3,7 +3,7 @@
 /**
  * Shared gate for every WebGL scene in every direction.
  *
- * Rules, applied identically in d1/d2/d3:
+ * Rules:
  *  · `children` (an SVG drawing) is the DEFAULT render — server-rendered,
  *    zero JS, and what everyone without WebGL or with reduced motion sees.
  *  · The canvas mounts only once the container has been in view AND the main

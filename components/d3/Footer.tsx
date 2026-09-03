@@ -55,7 +55,7 @@ export function D3Footer({ reserveHref = "#reserve" }: { reserveHref?: string })
               {col.links.map((link) => (
                 <li key={link.href}>
                   <Link
-                    href={resolveFooterHref(link, "d3")}
+                    href={resolveFooterHref(link)}
                     className="d3-body text-[0.8125rem] text-[var(--ink-2)] transition-colors hover:text-[var(--accent)]"
                   >
                     {link.label}

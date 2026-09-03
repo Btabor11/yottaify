@@ -178,8 +178,19 @@
     scroll-behavior: auto !important;
   }
 
-  /* Anything that animates in must already be at its final state. */
-  [data-reveal] {
+  /* Anything that animates in must already be at its final state.
+     Every reveal attribute in use is listed, plus the direct children of the
+     grouped variants, because those children carry no attribute of their own
+     and are what the JS actually hides. Components also check reduced motion
+     before hiding anything; this is the backstop for when one forgets. */
+  [data-reveal],
+  [data-reveal-group] > *,
+  [data-reveal-bars] > *,
+  [data-reveal-rule],
+  [data-r],
+  [data-r-group] > *,
+  [data-r-bars] > *,
+  [data-load] {
     opacity: 1 !important;
     transform: none !important;
     clip-path: none !important;

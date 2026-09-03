@@ -83,16 +83,13 @@ export const SPECS: Spec[] = [
     why: "Configurable. We hold headroom at the top of the range rather than running the fleet at its limit.",
     sourceId: "facility",
   },
-  {
-    id: "sms",
-    label: "SMs",
-    longLabel: "Streaming multiprocessors",
-    value: "160",
-    unit: "",
-    approx: true,
-    why: "Occupancy budget for custom kernels, if you write them.",
-    sourceId: "nvidiaBlackwellUltra",
-  },
+  /*
+   * REMOVED: streaming-multiprocessor count.
+   * NVIDIA does not publish an SM count for B300, and no secondary source we
+   * checked carries one. It was the only figure on this page with no
+   * verifiable origin, and on a page whose argument is "every number is
+   * sourced", one unsourceable number costs more than it earns.
+   */
 ];
 
 /** NVLink topology detail, stated separately because it is a shape not a scalar. */

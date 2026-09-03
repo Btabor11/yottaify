@@ -15,7 +15,7 @@
  */
 const PORT = process.env.PORT ?? "4320";
 const base = `http://127.0.0.1:${PORT}`;
-const ROUTES = ["/d1", "/d1/pricing", "/d2", "/d2/pricing", "/d3", "/d3/pricing"];
+const ROUTES = ["/", "/pricing"];
 
 const sizes = new Map();
 async function sizeOf(url) {

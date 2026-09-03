@@ -67,7 +67,7 @@ export function Console() {
       aria-labelledby="reserve-heading"
       className="d3-panel d3-ticks"
     >
-      <input type="hidden" name="returnTo" value="/d3" />
+      <input type="hidden" name="returnTo" value="/" />
 
       {/* --- console head ------------------------------------------------ */}
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-[var(--rule-strong)] px-5 py-3 md:px-7">

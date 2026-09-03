@@ -76,11 +76,11 @@ export const PRICE_ROWS: PriceRow[] = [
     qualifier: "Multiple providers",
     category: "unverified",
     low: 6.5,
-    high: 6.95,
-    display: "$6.50–6.95",
+    high: 7.5,
+    display: "$6.50–7.50",
     term: "On-demand",
     sourceId: "surveyUnverified",
-    note: "Below our rate — and frequently unverified or out of stock. We could not book capacity at any of these prices.",
+    note: "Spans our rate rather than sitting under it. Several of these are below $6.75; we could not book capacity at any of them. The band runs to $7.50 because that is where the unverifiable listings stop, and stopping it at $6.95 would have hidden the ones just above our rate.",
   },
   {
     id: "verified-low",
@@ -148,7 +148,7 @@ export const PRICE_ROWS: PriceRow[] = [
     display: "$4.25–5.62",
     term: "24–60 month",
     sourceId: "surveyCommitted",
-    note: "Long commitments buy a lower rate everywhere, including here. This is the market range, not our rate card.",
+    note: "Long commitments buy a lower rate everywhere, including here. This is the market range, not our rate card. Interruptible spot capacity is cheaper still — we have seen B300 spot from about $4.30 — but spot can be reclaimed mid-run, which is a different product from guaranteed capacity and is not what this row prices.",
   },
 ];
 

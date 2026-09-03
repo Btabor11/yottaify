@@ -9,9 +9,7 @@
 import { readFileSync } from "node:fs";
 
 const SHEETS = {
-  d1: "app/d1/d1.css",
-  d2: "app/d2/d2.css",
-  d3: "app/d3/d3.css",
+  site: "app/(site)/d3.css",
   legal: "app/legal/legal.css",
 };
 

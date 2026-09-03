@@ -12,7 +12,7 @@ import { mkdirSync } from "node:fs";
 const argv = process.argv.slice(2);
 const flags = argv.filter((a) => a.startsWith("--"));
 // Flags may appear anywhere, so positionals are whatever is left over.
-const [route = "/d1", label = "shot", wArg, hArg] = argv.filter((a) => !a.startsWith("--"));
+const [route = "/", label = "shot", wArg, hArg] = argv.filter((a) => !a.startsWith("--"));
 
 const flagValue = (name) => flags.find((f) => f.startsWith(`--${name}=`))?.slice(name.length + 3);
 const w = flagValue("w") ?? wArg ?? "1440";

@@ -17,7 +17,7 @@ const HOST = process.env.HOST ?? "127.0.0.1";
 const PORT = process.env.PORT ?? "4310";
 const base = `http://${HOST}:${PORT}`;
 
-const ROUTES = ["/d1", "/d1/pricing", "/d2", "/d2/pricing", "/d3", "/d3/pricing", "/legal/privacy", "/legal/terms"];
+const ROUTES = ["/", "/pricing", "/legal/privacy", "/legal/terms"];
 const WIDTHS = quick ? [1440] : [375, 768, 1440, 2560];
 
 const results = [];
@@ -151,7 +151,7 @@ for (const route of ROUTES) {
 }
 
 /* ---- 4. no JavaScript: the form has to still be there ------------------ */
-for (const route of ["/d1", "/d2", "/d3"]) {
+for (const route of ["/"]) {
   const { context, page } = await open(route, { nojs: true });
   const m = await page.evaluate(() => {
     const form = document.querySelector("form");
@@ -183,7 +183,7 @@ for (const route of ["/d1", "/d2", "/d3"]) {
 }
 
 /* ---- 5. keyboard: reach the form and submit it ------------------------- */
-for (const route of ["/d1", "/d2", "/d3"]) {
+for (const route of ["/"]) {
   const { context, page } = await open(route);
   const reach = await page.evaluate(async () => {
     const focusables = [...document.querySelectorAll('a[href],button,input,select,textarea,[tabindex]:not([tabindex="-1"])')]
@@ -217,7 +217,7 @@ for (const route of ["/d1", "/d2", "/d3"]) {
 }
 
 /* ---- 6. submit the form for real, through the stub --------------------- */
-for (const route of ["/d1", "/d2", "/d3"]) {
+for (const route of ["/"]) {
   const { context, page, errors } = await open(route);
   const posted = [];
   page.on("request", (r) => r.method() === "POST" && posted.push(r.url()));
@@ -296,7 +296,7 @@ for (const route of ["/d1", "/d2", "/d3"]) {
 }
 
 /* ---- 7. validation actually blocks a bad submit ------------------------ */
-for (const route of ["/d1", "/d2", "/d3"]) {
+for (const route of ["/"]) {
   const { context, page } = await open(route);
   try {
     await page.evaluate(() => document.querySelector("#reserve")?.scrollIntoView());
@@ -328,7 +328,7 @@ for (const route of ["/d1", "/d2", "/d3"]) {
    unstable callback prop, so the context was destroyed one render after the
    first frame — so it is worth a standing check rather than an eye.
 */
-for (const route of ["/d1", "/d2", "/d3"]) {
+for (const route of ["/"]) {
   const { context, page } = await open(route);
   try {
     // Walk the page so every deferred scene has been asked to mount.

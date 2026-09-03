@@ -57,8 +57,6 @@ export const SITE = {
     detail: "Privately owned warehouse, Arkansas Ozarks",
   },
 
-  /** Which design direction `/` currently redirects to. Promote a winner by editing this. */
-  frontRunner: "d1" as "d1" | "d2" | "d3",
 
   /** Global "as of" date for market pricing. Every rate on the site was checked on this date. */
   pricingAsOf: "2026-09-02",
@@ -71,23 +69,15 @@ export const SITE = {
 
 export type SiteConfig = typeof SITE;
 
-/** Design directions, for nav/switcher and metadata. */
-export const DIRECTIONS = [
-  {
-    slug: "d1",
-    label: "Cold Room",
-    blurb: "Instrument panel. Dark, telemetric, monospaced.",
-  },
-  {
-    slug: "d2",
-    label: "Ledger",
-    blurb: "Editorial print. Warm paper, serif, footnoted.",
-  },
-  {
-    slug: "d3",
-    label: "Substation",
-    blurb: "Kinetic. Saturated, WebGL, high-voltage.",
-  },
-] as const;
-
-export type DirectionSlug = (typeof DIRECTIONS)[number]["slug"];
+/**
+ * The chosen direction. "Substation" — kinetic, saturated, WebGL.
+ *
+ * D1 "Cold Room" and D2 "Ledger" were built, reviewed and dropped. Both are
+ * recoverable from git history at tag-free commit 9745956 if the decision is
+ * ever revisited; nothing about them remains in the working tree.
+ */
+export const DIRECTION = {
+  slug: "d3",
+  label: "Substation",
+  blurb: "Kinetic. Saturated, WebGL, high-voltage.",
+} as const;

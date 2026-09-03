@@ -21,7 +21,7 @@ import { pricingJsonLd } from "@/components/shared/pricingSchema";
 export const metadata: Metadata = {
   title: META.pricing.title,
   description: META.pricing.description,
-  alternates: { canonical: "/d3/pricing" },
+  alternates: { canonical: "/pricing" },
   openGraph: {
     title: META.pricing.title,
     description: META.pricing.description,

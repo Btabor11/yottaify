@@ -12,7 +12,7 @@ import { gzipSync, brotliCompressSync } from "node:zlib";
 
 const PORT = process.env.PORT ?? "4320";
 const base = `http://127.0.0.1:${PORT}`;
-const ROUTES = process.argv[2] ? [process.argv[2]] : ["/d1", "/d2", "/d3"];
+const ROUTES = process.argv[2] ? [process.argv[2]] : ["/", "/pricing"];
 
 // Strings that only appear if the library itself is in the bundle.
 const FINGERPRINTS = [

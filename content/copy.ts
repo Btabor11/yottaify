@@ -99,11 +99,9 @@ export const FOOTER = {
       id: "site",
       label: "Site",
       links: [
-        // `direction` links are relative to the current design direction, so
-        // /d2's footer points at /d2/pricing without the component knowing.
-        { label: "Pricing comparison", href: "/pricing", scope: "direction" },
-        { label: "Reserve capacity", href: "#reserve", scope: "direction" },
-        { label: "Hardware", href: "#specs", scope: "direction" },
+        { label: "Pricing comparison", href: "/pricing", scope: "site" },
+        { label: "Reserve capacity", href: "/#reserve", scope: "site" },
+        { label: "Hardware", href: "/#specs", scope: "site" },
       ],
     },
     {
@@ -117,7 +115,7 @@ export const FOOTER = {
   ] as const satisfies readonly {
     id: string;
     label: string;
-    links: readonly { label: string; href: string; scope: "direction" | "absolute" }[];
+    links: readonly { label: string; href: string; scope: "site" | "absolute" }[];
   }[],
   /** Rendered at the bottom of every page. The honesty, compressed. */
   disclosure: `${SITE.name} has no customers, no uptime history, and no third-party certifications. Every figure on this site carries a source and the date it was checked. Rates verified ${formatAsOf(SITE.pricingAsOf)} and subject to change.`,
@@ -154,17 +152,16 @@ export const META = {
 } as const;
 
 /**
- * Resolve a footer link for the direction rendering it.
- *   direction-scoped "/pricing"  in d2 → "/d2/pricing"
- *   direction-scoped "#reserve"  in d2 → "/d2#reserve"
- *   absolute         "/legal/..."      → unchanged
+ * Resolve a footer link.
+ *
+ * Kept as a function rather than inlining the href: when there were three
+ * design directions this rewrote every link to the current one, and the
+ * footer component still calls it. Now that the site has a single root it is
+ * an identity function, and the `scope` field is what documents that a link
+ * is ours rather than external.
  */
-export function resolveFooterHref(
-  link: { href: string; scope: "direction" | "absolute" },
-  direction: string,
-): string {
-  if (link.scope === "absolute") return link.href;
-  return link.href.startsWith("#") ? `/${direction}${link.href}` : `/${direction}${link.href}`;
+export function resolveFooterHref(link: { href: string; scope: "site" | "absolute" }): string {
+  return link.href;
 }
 
 /** "2026-09-02" → "2 September 2026". Used everywhere an "as of" date renders. */

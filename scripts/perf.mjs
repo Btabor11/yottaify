@@ -12,7 +12,7 @@ import { assertHardware, launchGpu } from "./launch.mjs";
 
 const PORT = process.env.PORT ?? "4320";
 const base = `http://127.0.0.1:${PORT}`;
-const ROUTES = ["/d1", "/d1/pricing", "/d2", "/d2/pricing", "/d3", "/d3/pricing"];
+const ROUTES = ["/", "/pricing"];
 
 // A mid-tier laptop on a good connection: 4x CPU slowdown, 40 Mbps, 40ms RTT.
 const CPU_SLOWDOWN = 4;

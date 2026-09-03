@@ -1,10 +1,9 @@
 import { d3FontClass } from "./fonts";
 import { SmoothScroll } from "@/components/shared/SmoothScroll";
-import { DirectionSwitcher } from "@/components/shared/DirectionSwitcher";
 import { Field } from "@/components/d3/Field";
 import "./d3.css";
 
-export default function D3Layout({ children }: { children: React.ReactNode }) {
+export default function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className={`d3 ${d3FontClass} min-h-dvh`}>
       <a href="#main" className="skip-link">
@@ -21,8 +20,6 @@ export default function D3Layout({ children }: { children: React.ReactNode }) {
       <Field />
 
       {children}
-
-      <DirectionSwitcher current="d3" />
     </div>
   );
 }

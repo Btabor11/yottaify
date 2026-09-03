@@ -13,3 +13,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 /lighthouse
+
+# Screenshot harness output. Regenerate with `npm run shot`.
+/shots

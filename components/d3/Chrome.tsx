@@ -10,7 +10,7 @@ import { trackCta } from "@/lib/analytics";
  * Wordmark as a nameplate: monogram in a boxed cell, name beside it, live pip.
  * The pip is the only always-on animation on the page and it is 8px wide.
  */
-export function D3Logo({ href = "/d3" }: { href?: string }) {
+export function D3Logo({ href = "/" }: { href?: string }) {
   return (
     <Link href={href} aria-label={`${SITE.name} — home`} className="group inline-flex items-center gap-3">
       <span
@@ -70,7 +70,7 @@ export function D3Nav({ onPricingPage = false }: { onPricingPage?: boolean }) {
         <nav aria-label="Sections" className="flex items-center gap-1.5 sm:gap-4">
           {onPricingPage ? (
             <Link
-              href="/d3"
+              href="/"
               className="d3-tag text-[var(--ink-2)] transition-colors hover:text-[var(--accent)]"
             >
               ← Overview
