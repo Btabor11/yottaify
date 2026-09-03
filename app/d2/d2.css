@@ -16,21 +16,27 @@
   --bg: #f4f0e8;
   --surface: #ebe5d9;
   --surface-2: #e0d9c9;
-  /* Ink. Contrast on --bg: ink 16.1:1 · ink-2 8.1:1 · ink-3 4.8:1 */
+  /* Ink. Paper has three stocks, so every ink is checked against the darkest
+     of them (--surface) rather than the lightest.
+     ink 14.6:1 · ink-2 7.4:1 · ink-3 4.66:1, all worst-case on --surface. */
   --ink: #16150f;
   --ink-2: #4a4839;
-  --ink-3: #6e6a58;
-  /* Rules: --rule is decorative hairline, --edge is used on controls (3.3:1) */
+  --ink-3: #696554;
+  /* --rule and --rule-strong are decorative hairlines. --edge is the only
+     border allowed on a control, and clears 3:1 on all three stocks (3.10:1
+     worst case, on --surface-2). */
   --rule: #d3cbb8;
   --rule-strong: #b6ad96;
-  --edge: #8a8570;
+  --edge: #7e7966;
   /* Ledger red for our own figures and for anything needing a second look */
   --accent: #b2331e;
   --accent-ink: #f4f0e8;
   /* Ink blue, for verified third-party facts */
   --accent-2: #2a4a6b;
-  /* Ochre, for provisional figures */
-  --caution: #8a6a1f;
+  /* Ochre, for provisional figures. Set as running text on the pricing page,
+     so it is held to 4.5:1 rather than the 3:1 a figure would need — 4.63:1
+     worst case, on --surface. */
+  --caution: #7e611c;
   --hot: #b2331e;
   --focus: #b2331e;
 
@@ -135,7 +141,9 @@
 .d2-page {
   display: grid;
   gap: 0 clamp(1.5rem, 3vw, 3rem);
-  grid-template-columns: 1fr;
+  /* minmax(0, 1fr), not 1fr: an auto-minimum track sizes to its content's
+     minimum, so one wide table inside it drags the page sideways on a phone. */
+  grid-template-columns: minmax(0, 1fr);
 }
 @media (min-width: 1024px) {
   .d2-page {
@@ -187,16 +195,23 @@
 }
 
 /* Leader dots, for the contents list and the order card. Pure CSS, so they
-   reflow with the text instead of being drawn once. */
+   reflow with the text instead of being drawn once.
+
+   Wraps rather than overflows: when the two ends will not share a line the
+   trailing figure drops beneath and stays flush right, which is what a printed
+   contents page does with a long chapter title. The leader keeps a minimum
+   run so it never collapses to a single dot. */
 .d2-leader {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.5rem;
+  gap: 0 0.5rem;
   width: 100%;
 }
 .d2-leader::after {
   content: "";
-  flex: 1;
+  flex: 1 1 1.5rem;
+  min-width: 1.5rem;
   order: 1;
   height: 0;
   border-bottom: 1px dotted var(--rule-strong);
@@ -204,6 +219,7 @@
 }
 .d2-leader > :last-child {
   order: 2;
+  margin-left: auto;
 }
 
 /* --- Load choreography -------------------------------------------------
@@ -462,6 +478,60 @@
 /* The row that is us gets a paper tint, not a colour block. */
 .d2-row-ours {
   background: color-mix(in oklab, var(--accent) 5%, transparent);
+}
+
+/* Narrow measure: a ledger sets one entry per block rather than scrolling the
+   column sideways. The header row becomes the label on each cell, and the two
+   columns that are hidden on a wide phone — term and date read — come back,
+   because vertical space is the thing there is more of. Every rate still
+   carries its own source and date, which is the whole point of the table. */
+@media (max-width: 33rem) {
+  .d2-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .d2-table tr {
+    display: block;
+    padding-block: 0.9rem;
+    border-bottom: 1px solid var(--rule-strong);
+  }
+  .d2-table tr:last-child {
+    border-bottom: 0;
+  }
+  .d2-table th,
+  .d2-table td {
+    display: block;
+    padding: 0;
+    border: 0;
+    text-align: left;
+  }
+  .d2-table td[data-label] {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1.25rem;
+    margin-top: 0.45rem;
+  }
+  .d2-table td[data-label]::before {
+    content: attr(data-label);
+    font-family: var(--fm);
+    font-size: 0.5rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    flex: 0 0 auto;
+  }
+  /* Restore the columns the wide-phone layout drops. */
+  .d2-table .d2-col-wide {
+    display: flex;
+  }
+  .d2-num {
+    text-align: right !important;
+  }
 }
 
 /* --- Stamp ------------------------------------------------------------- */

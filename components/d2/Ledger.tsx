@@ -94,23 +94,30 @@ export function LedgerTable({ compact = false }: { compact?: boolean }) {
                 )}
               </th>
               <td
+                data-label="Rate"
                 className="d2-num text-[1.0625rem]"
                 style={{ color: r.isUs ? "var(--accent)" : "var(--ink)" }}
               >
                 {r.display}
               </td>
-              <td className="d2-num text-[0.875rem] text-[var(--ink-2)]">
+              <td data-label="vs. ours" className="d2-num text-[0.875rem] text-[var(--ink-2)]">
                 {r.isUs ? "—" : multipleOfOurRate(r.low)}
               </td>
-              <td className="d2-caps hidden text-[0.5625rem] text-[var(--ink-2)] sm:table-cell">
+              <td
+                data-label="Term"
+                className="d2-caps d2-col-wide hidden text-[0.5625rem] text-[var(--ink-2)] sm:table-cell"
+              >
                 {r.term}
               </td>
-              <td>
+              <td data-label="Status">
                 <span className="d2-stamp" style={{ color: STAMP_TONE[kind] }}>
                   {verificationShort(r.sourceId)}
                 </span>
               </td>
-              <td className="d2-num hidden whitespace-nowrap text-[0.75rem] text-[var(--ink-3)] md:table-cell">
+              <td
+                data-label="Read"
+                className="d2-num d2-col-wide hidden whitespace-nowrap text-[0.75rem] text-[var(--ink-3)] md:table-cell"
+              >
                 {formatAsOfShort(src.accessed)}
               </td>
             </tr>

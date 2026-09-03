@@ -1,4 +1,5 @@
 import { row, RATE, formatAsOfShort, source } from "@/content";
+import { usd } from "@/lib/estimate";
 import { footnoteNumber } from "./apparatus";
 
 /**
@@ -15,11 +16,25 @@ import { footnoteNumber } from "./apparatus";
  * number, so the reader can resolve any figure to a source without leaving the
  * chart.
  *
+ * Layout note: the vertical positions below are laid out by hand into
+ * non-overlapping bands rather than computed, because a magnified inset has
+ * genuinely fixed zones and an auto-layout would only hide a collision.
+ *
+ *   26        full-scale caption
+ *   44–70     committed range bracket
+ *   49–95     hyperscaler markers (above the axis)
+ *   130       MAIN AXIS · ticks to 137 · figures at 150
+ *   158–192   lens leaders, with the inset caption in the corridor at 180
+ *   211–247   unverified band and the verified marker (above the axis)
+ *   250       DETAIL AXIS · ticks to 257 · figures at 270
+ *   284–312   our rate and the median (below the axis)
+ *
  * Hidden below md: at 375px this becomes unreadable, and the ruled table
  * beneath it already carries every figure.
  */
 
 const W = 1000;
+const H = 340;
 const PAD = 72;
 const SPAN = W - PAD * 2;
 
@@ -27,8 +42,11 @@ const MAIN_MAX = 18;
 const DETAIL_LO = 6.25;
 const DETAIL_HI = 8.0;
 
-const MAIN_AXIS_Y = 104;
-const DETAIL_AXIS_Y = 244;
+const MAIN_AXIS_Y = 130;
+const DETAIL_AXIS_Y = 250;
+/** Where the lens leaders start and land. Below the main figures, above the inset. */
+const LENS_TOP = 158;
+const LENS_BOTTOM = 192;
 
 const mainX = (v: number) => PAD + (v / MAIN_MAX) * SPAN;
 const detailX = (v: number) => PAD + ((v - DETAIL_LO) / (DETAIL_HI - DETAIL_LO)) * SPAN;
@@ -71,7 +89,31 @@ function T({
   );
 }
 
-/** A labelled marker: stem, dot, figure, name, footnote. */
+/** Uppercase name with its footnote number, as one label. */
+function Name({
+  x,
+  y,
+  children,
+  fn,
+  anchor = "middle",
+}: {
+  x: number;
+  y: number;
+  children: string;
+  fn: number;
+  anchor?: "start" | "middle" | "end";
+}) {
+  return (
+    <T x={x} y={y} anchor={anchor} fill="var(--ink-2)" size={8.5} tabular={false}>
+      {`${children.toUpperCase()} `}
+      <tspan fill="var(--accent)" dy={-3} style={{ font: `600 7px ${MONO}` }}>
+        {fn}
+      </tspan>
+    </T>
+  );
+}
+
+/** A labelled marker: stem off the axis, dot on it, figure and name beyond. */
 function Marker({
   x,
   axisY,
@@ -99,24 +141,14 @@ function Marker({
 
   return (
     <g>
-      <line
-        x1={x}
-        y1={axisY}
-        x2={x}
-        y2={tipY}
-        stroke={color}
-        strokeWidth={emphasis ? 1.6 : 1}
-      />
+      <line x1={x} y1={axisY} x2={x} y2={tipY} stroke={color} strokeWidth={emphasis ? 1.6 : 1} />
       <circle cx={x} cy={axisY} r={emphasis ? 4 : 2.6} fill={color} />
       <T x={x} y={figureY} fill={color} size={emphasis ? 19 : 14} weight={emphasis ? 600 : 500}>
         {figure}
       </T>
-      <T x={x} y={nameY} fill="var(--ink-2)" size={8.5} tabular={false}>
-        {`${name.toUpperCase()} `}
-        <tspan fill="var(--accent)" dy={-3} style={{ font: `600 7px ${MONO}` }}>
-          {fn}
-        </tspan>
-      </T>
+      <Name x={x} y={nameY} fn={fn}>
+        {name}
+      </Name>
     </g>
   );
 }
@@ -130,13 +162,17 @@ export function RateScale() {
   const aws = row("aws");
   const committed = row("committed");
 
+  const committedMid = (mainX(committed.low) + mainX(committed.high!)) / 2;
+  const unverifiedMid = (detailX(unverified.low) + detailX(unverified.high!)) / 2;
+  const medianMid = (detailX(median.low) + detailX(median.high!)) / 2;
+
   return (
     <figure className="hidden md:block">
       <svg
-        viewBox={`0 0 ${W} 300`}
+        viewBox={`0 0 ${W} ${H}`}
         className="h-auto w-full"
         role="img"
-        aria-label={`Number line of published B300 rates per GPU-hour. Our rate ${ours.display}. Unverified neocloud listings ${unverified.display}. Lowest verified in stock ${verified.display}. Median across tracked providers ${median.display}. Oracle ${oracle.display}. AWS ${aws.display}. Committed terms across providers ${committed.display}.`}
+        aria-label={`Number line of published B300 rates per GPU-hour. Our rate ${ours.display}. Unverified neocloud listings ${unverified.display}. Lowest verified in stock ${verified.display}. Median across tracked providers ${median.display}. ${oracle.provider} ${oracle.display}. ${aws.provider} ${aws.display}. Committed terms across providers ${committed.display}.`}
       >
         <defs>
           <pattern
@@ -150,10 +186,60 @@ export function RateScale() {
           </pattern>
         </defs>
 
-        {/* ---------- MAIN SCALE, 0 to 18 ---------- */}
-        <T x={PAD} y={30} anchor="start" fill="var(--ink-3)" size={9} tabular={false}>
+        {/* ---------- MAIN SCALE, $0 to $18 ---------- */}
+        <T x={PAD} y={26} anchor="start" fill="var(--ink-3)" size={9} tabular={false}>
           FULL SCALE — USD PER GPU-HOUR
         </T>
+
+        {/* committed range — a bracket, because it is a market range not a rate */}
+        <g>
+          <Name x={committedMid} y={44} fn={footnoteNumber(committed.sourceId)}>
+            Committed, 24–60 mo
+          </Name>
+          <T x={committedMid} y={58} fill="var(--accent-2)" size={11}>
+            {committed.display}
+          </T>
+          <line
+            x1={mainX(committed.low)}
+            y1={70}
+            x2={mainX(committed.high!)}
+            y2={70}
+            stroke="var(--accent-2)"
+            strokeWidth="1.2"
+          />
+          {[committed.low, committed.high!].map((v) => (
+            <line
+              key={v}
+              x1={mainX(v)}
+              y1={65}
+              x2={mainX(v)}
+              y2={75}
+              stroke="var(--accent-2)"
+              strokeWidth="1.2"
+            />
+          ))}
+        </g>
+
+        <Marker
+          x={mainX(oracle.low)}
+          axisY={MAIN_AXIS_Y}
+          dir={-1}
+          figure={oracle.display}
+          name={oracle.provider}
+          fn={footnoteNumber(oracle.sourceId)}
+          color="var(--ink)"
+          stem={30}
+        />
+        <Marker
+          x={mainX(aws.low)}
+          axisY={MAIN_AXIS_Y}
+          dir={-1}
+          figure={aws.display}
+          name={aws.provider}
+          fn={footnoteNumber(aws.sourceId)}
+          color="var(--ink)"
+          stem={62}
+        />
 
         <line
           x1={PAD}
@@ -180,93 +266,79 @@ export function RateScale() {
           </g>
         ))}
 
-        {/* committed range — a bracket, because it is a market range not a rate */}
+        {/* ---------- THE LENS ----------
+            A marked segment sitting on the axis, and two leaders opening out to
+            the inset below. Deliberately unfilled: a filled fan would cover the
+            axis figures it is drawn over. */}
         <g>
-          <line
-            x1={mainX(committed.low)}
-            y1={MAIN_AXIS_Y - 16}
-            x2={mainX(committed.high!)}
-            y2={MAIN_AXIS_Y - 16}
+          <rect
+            x={mainX(DETAIL_LO)}
+            y={MAIN_AXIS_Y - 5}
+            width={mainX(DETAIL_HI) - mainX(DETAIL_LO)}
+            height={10}
+            fill="var(--accent-2)"
+            fillOpacity="0.16"
             stroke="var(--accent-2)"
-            strokeWidth="1.2"
+            strokeWidth="1"
           />
-          {[committed.low, committed.high!].map((v) => (
+          {[DETAIL_LO, DETAIL_HI].map((v) => (
             <line
               key={v}
               x1={mainX(v)}
-              y1={MAIN_AXIS_Y - 21}
+              y1={MAIN_AXIS_Y - 9}
               x2={mainX(v)}
-              y2={MAIN_AXIS_Y - 11}
+              y2={MAIN_AXIS_Y + 9}
               stroke="var(--accent-2)"
-              strokeWidth="1.2"
+              strokeWidth="1"
             />
           ))}
-          <T
-            x={(mainX(committed.low) + mainX(committed.high!)) / 2}
-            y={MAIN_AXIS_Y - 27}
-            fill="var(--accent-2)"
-            size={11}
-          >
-            {committed.display}
-          </T>
-          <T
-            x={(mainX(committed.low) + mainX(committed.high!)) / 2}
-            y={MAIN_AXIS_Y - 40}
-            fill="var(--ink-2)"
-            size={8.5}
-            tabular={false}
-          >
-            {"COMMITTED, 24–60 MO "}
-            <tspan fill="var(--accent)" dy={-3} style={{ font: `600 7px ${MONO}` }}>
-              {footnoteNumber(committed.sourceId)}
-            </tspan>
-          </T>
         </g>
 
-        <Marker
-          x={mainX(oracle.low)}
-          axisY={MAIN_AXIS_Y}
-          dir={-1}
-          figure={oracle.display}
-          name={oracle.provider}
-          fn={footnoteNumber(oracle.sourceId)}
-          color="var(--ink)"
-          stem={30}
-        />
-        <Marker
-          x={mainX(aws.low)}
-          axisY={MAIN_AXIS_Y}
-          dir={-1}
-          figure={aws.display}
-          name={aws.provider}
-          fn={footnoteNumber(aws.sourceId)}
-          color="var(--ink)"
-          stem={62}
-        />
+        <g stroke="var(--rule-strong)" strokeWidth="0.9" strokeDasharray="4 3">
+          <line x1={mainX(DETAIL_LO)} y1={LENS_TOP} x2={PAD} y2={LENS_BOTTOM} />
+          <line x1={mainX(DETAIL_HI)} y1={LENS_TOP} x2={W - PAD} y2={LENS_BOTTOM} />
+        </g>
 
-        {/* ---------- DETAIL LENS ---------- */}
-        <rect
-          x={mainX(DETAIL_LO)}
-          y={MAIN_AXIS_Y - 6}
-          width={mainX(DETAIL_HI) - mainX(DETAIL_LO)}
-          height={12}
-          fill="var(--surface-2)"
-          stroke="var(--ink)"
-          strokeWidth="1"
-        />
-        <path
-          d={`M${mainX(DETAIL_LO)},${MAIN_AXIS_Y + 6} L${PAD},${DETAIL_AXIS_Y - 52} L${W - PAD},${DETAIL_AXIS_Y - 52} L${mainX(DETAIL_HI)},${MAIN_AXIS_Y + 6} Z`}
-          fill="var(--surface)"
-          stroke="var(--rule-strong)"
-          strokeWidth="0.8"
-          strokeDasharray="3 3"
-          opacity="0.85"
-        />
-
-        {/* ---------- DETAIL SCALE, 6.25 to 8.00 ---------- */}
-        <T x={PAD} y={DETAIL_AXIS_Y - 62} anchor="start" fill="var(--ink-3)" size={9} tabular={false}>
-          DETAIL — $6.25 TO $8.00, WHERE THE ARGUMENT IS
+        {/* Caption rides in the corridor between the two leaders, on a knocked-out
+            patch of stock so the dashes break around it rather than through it. */}
+        <rect x={W / 2 - 152} y={172} width={304} height={12} fill="var(--bg)" />
+        <T x={W / 2} y={181} fill="var(--ink-3)" size={9} tabular={false}>
+          {`DETAIL — ${usd(DETAIL_LO)} TO ${usd(DETAIL_HI)}, WHERE THE ARGUMENT IS`}
         </T>
+
+        {/* ---------- DETAIL SCALE, $6.25 to $8.00 ---------- */}
+
+        {/* unverified band, hatched, sitting to the left of our own marker */}
+        <g>
+          <Name x={unverifiedMid} y={211} fn={footnoteNumber(unverified.sourceId)}>
+            Unverified listings
+          </Name>
+          <T x={unverifiedMid} y={226} fill="var(--caution)" size={13}>
+            {unverified.display}
+          </T>
+          <rect
+            x={detailX(unverified.low)}
+            y={230}
+            width={detailX(unverified.high!) - detailX(unverified.low)}
+            height={17}
+            fill="url(#d2rs-hatch)"
+            stroke="var(--caution)"
+            strokeWidth="1.1"
+          />
+        </g>
+
+        {/* lowest verified in stock — above the axis, opposite the hatched band */}
+        <Marker
+          x={detailX(verified.low)}
+          axisY={DETAIL_AXIS_Y}
+          dir={-1}
+          figure={verified.display}
+          name="Lowest verified in stock"
+          fn={footnoteNumber(verified.sourceId)}
+          color="var(--accent-2)"
+          emphasis
+          stem={20}
+        />
 
         <line
           x1={PAD}
@@ -292,40 +364,7 @@ export function RateScale() {
           </g>
         ))}
 
-        {/* unverified band, hatched, sitting below our own marker's price */}
-        <g>
-          <rect
-            x={detailX(unverified.low)}
-            y={DETAIL_AXIS_Y - 34}
-            width={detailX(unverified.high!) - detailX(unverified.low)}
-            height={17}
-            fill="url(#d2rs-hatch)"
-            stroke="var(--caution)"
-            strokeWidth="1.1"
-          />
-          <T
-            x={(detailX(unverified.low) + detailX(unverified.high!)) / 2}
-            y={DETAIL_AXIS_Y - 42}
-            fill="var(--caution)"
-            size={13}
-          >
-            {unverified.display}
-          </T>
-          <T
-            x={(detailX(unverified.low) + detailX(unverified.high!)) / 2}
-            y={DETAIL_AXIS_Y - 55}
-            fill="var(--ink-2)"
-            size={8.5}
-            tabular={false}
-          >
-            {"UNVERIFIED LISTINGS "}
-            <tspan fill="var(--accent)" dy={-3} style={{ font: `600 7px ${MONO}` }}>
-              {footnoteNumber(unverified.sourceId)}
-            </tspan>
-          </T>
-        </g>
-
-        {/* our rate — the emphasised marker, below the axis */}
+        {/* our rate — the emphasised marker, below the axis and clear of the figures */}
         <Marker
           x={detailX(ours.low)}
           axisY={DETAIL_AXIS_Y}
@@ -335,39 +374,26 @@ export function RateScale() {
           fn={footnoteNumber(ours.sourceId)}
           color="var(--accent)"
           emphasis
-          stem={16}
+          stem={34}
         />
 
-        {/* lowest verified in stock — above */}
+        {/* median — below, on the same baseline as our own label */}
         <Marker
-          x={detailX(verified.low)}
-          axisY={DETAIL_AXIS_Y}
-          dir={-1}
-          figure={verified.display}
-          name="Lowest verified in stock"
-          fn={footnoteNumber(verified.sourceId)}
-          color="var(--accent-2)"
-          emphasis
-          stem={20}
-        />
-
-        {/* median — below, offset so it clears our marker's label */}
-        <Marker
-          x={(detailX(median.low) + detailX(median.high!)) / 2}
+          x={medianMid}
           axisY={DETAIL_AXIS_Y}
           dir={1}
           figure={median.display}
           name="Median"
           fn={footnoteNumber(median.sourceId)}
           color="var(--ink)"
-          stem={16}
+          stem={34}
         />
       </svg>
 
       <figcaption className="d2-prose mt-4 max-w-[74ch] text-[0.8125rem] text-[var(--ink-3)] text-pretty">
-        Rates as read on {formatAsOfShort(source("ours").accessed)}. The detail scale is magnified;
-        the hatched band is a published price we could not confirm as in stock, and it is cheaper
-        than ours. Superscripts resolve to sources below.
+        Rates as read on {formatAsOfShort(source("ours").accessed)}. The lower scale is the boxed
+        segment of the upper one, magnified; the hatched band is a published price we could not
+        confirm as in stock, and it is cheaper than ours. Superscripts resolve to sources below.
       </figcaption>
     </figure>
   );

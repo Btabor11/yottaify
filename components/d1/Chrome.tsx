@@ -100,7 +100,7 @@ export function D1StatusStrip() {
         <span key={`${label}-${i}`} className="flex items-center whitespace-nowrap">
           <span className="d1-label px-4 text-[var(--ink-3)]">
             {label}
-            <span className="mx-2 text-[var(--rule-strong)]">/</span>
+            <span aria-hidden className="mx-2 text-[var(--rule-strong)]">/</span>
             <span className="d1-figure text-[var(--ink-2)]">{value}</span>
           </span>
           <span aria-hidden className="h-2.5 w-px bg-[var(--rule-strong)]" />

@@ -17,6 +17,8 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { FLEET } from "@/content";
+import { SCENE } from "./palette";
+import type { SceneProps } from "@/components/shared/SceneMount";
 
 const COLS = 4;
 const ROWS = 2;
@@ -65,7 +67,7 @@ function Fabric({ pts }: { pts: THREE.Vector3[] }) {
 
   return (
     <lineSegments geometry={geometry}>
-      <lineBasicMaterial color="#16150f" transparent opacity={0.24} />
+      <lineBasicMaterial color={SCENE.ink} transparent opacity={0.24} />
     </lineSegments>
   );
 }
@@ -90,7 +92,7 @@ function Plate({ progressRef }: { progressRef: React.RefObject<number> }) {
     camera.lookAt(0, 0.05, 0);
   });
 
-  const ink = <lineBasicMaterial color="#16150f" transparent opacity={0.78} />;
+  const ink = <lineBasicMaterial color={SCENE.ink} transparent opacity={0.78} />;
 
   return (
     <group ref={group}>
@@ -98,15 +100,15 @@ function Plate({ progressRef }: { progressRef: React.RefObject<number> }) {
       {pts.map((p, i) => (
         <group key={i} position={p}>
           <lineSegments geometry={PKG}>
-            <lineBasicMaterial color="#16150f" transparent opacity={0.82} />
+            <lineBasicMaterial color={SCENE.ink} transparent opacity={0.82} />
           </lineSegments>
           <lineSegments geometry={DIE} position={[0, 0.12, 0]}>
-            <lineBasicMaterial color="#16150f" transparent opacity={0.6} />
+            <lineBasicMaterial color={SCENE.ink} transparent opacity={0.6} />
           </lineSegments>
           {[-0.33, 0.33].map((x) =>
             [-0.24, 0.24].map((z) => (
               <lineSegments key={`${x}-${z}`} geometry={HBM} position={[x, 0.13, z]}>
-                <lineBasicMaterial color="#b2331e" transparent opacity={0.66} />
+                <lineBasicMaterial color={SCENE.red} transparent opacity={0.66} />
               </lineSegments>
             )),
           )}
@@ -120,12 +122,13 @@ function Plate({ progressRef }: { progressRef: React.RefObject<number> }) {
 export default function EngravingScene({
   progressRef,
   active,
-}: {
-  progressRef: React.RefObject<number>;
-  active: boolean;
-}) {
+  onReady,
+}: SceneProps) {
   return (
     <Canvas
+      // Reported to SceneMount so the drawing underneath only fades out
+      // once there is something real to fade to.
+      onCreated={() => onReady?.()}
       frameloop={active ? "always" : "never"}
       dpr={[1, 2]}
       gl={{ antialias: true, alpha: true, powerPreference: "low-power" }}

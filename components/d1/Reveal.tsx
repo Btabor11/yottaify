@@ -16,13 +16,16 @@
  */
 
 import { useEffect } from "react";
-import { useReducedMotion } from "@/lib/motion";
+import { prefersReducedMotion, useReducedMotion } from "@/lib/motion";
 
 export function RevealRoot({ scope }: { scope?: string }) {
   const reduced = useReducedMotion();
 
   useEffect(() => {
-    if (reduced) return;
+    // Checked again here, imperatively. The state value above re-runs this
+    // effect if the preference changes mid-session, but the media query is
+    // the only thing that can be trusted before the first hidden state is set.
+    if (reduced || prefersReducedMotion()) return;
 
     let ctx: { revert: () => void } | undefined;
     let cancelled = false;
@@ -32,7 +35,7 @@ export function RevealRoot({ scope }: { scope?: string }) {
         import("gsap"),
         import("gsap/ScrollTrigger"),
       ]);
-      if (cancelled) return;
+      if (cancelled || prefersReducedMotion()) return;
 
       gsap.registerPlugin(ScrollTrigger);
 

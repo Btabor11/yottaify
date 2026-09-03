@@ -30,7 +30,7 @@ export function Footnotes({ heading = "Sources" }: { heading?: string }) {
             <li
               key={note.n}
               id={`fn-${note.n}`}
-              className="grid scroll-mt-32 grid-cols-[1.75rem_1fr] gap-3 border-b border-[var(--rule)] py-3.5 target:bg-[color-mix(in_oklab,var(--accent)_9%,transparent)]"
+              className="grid scroll-mt-32 grid-cols-[1.75rem_minmax(0,1fr)] gap-3 border-b border-[var(--rule)] py-3.5 target:bg-[color-mix(in_oklab,var(--accent)_9%,transparent)]"
             >
               <span className="d2-figure pt-[0.15rem] text-[0.75rem] text-[var(--accent)]">
                 {note.n}
@@ -49,7 +49,7 @@ export function Footnotes({ heading = "Sources" }: { heading?: string }) {
                   ) : (
                     note.source.label
                   )}
-                  <span className="d2-caps ml-2 whitespace-nowrap text-[0.5rem] text-[var(--ink-3)]">
+                  <span className="d2-caps ml-2 text-[0.5rem] text-[var(--ink-3)]">
                     {VERIFICATION_LABEL[note.source.kind]}
                   </span>
                 </p>

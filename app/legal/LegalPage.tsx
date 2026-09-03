@@ -28,7 +28,7 @@ export function LegalPage({
         {sections.map((section, i) => (
           <section key={section.heading} className="contents">
             <h2 className="font-[family-name:var(--fm)] text-[0.6875rem] uppercase tracking-[0.14em] text-[var(--ink-3)] md:pt-[0.4rem]">
-              <span className="tnum mr-3 text-[var(--rule-strong)]">
+              <span className="tnum mr-3 text-[var(--ink-3)]">
                 {String(i + 1).padStart(2, "0")}
               </span>
               {section.heading}

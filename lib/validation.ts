@@ -1,12 +1,18 @@
 /**
  * RESERVATION VALIDATION.
  *
- * One zod schema, shared by the client form, `submitReservation`, and the
- * server route at /api/reservation. There is no second definition of "valid"
- * anywhere in the codebase.
+ * One schema, shared by the client form, `submitReservation`, and the server
+ * route at /api/reservation. There is no second definition of "valid" anywhere
+ * in the codebase, and there must not be — a client rule that drifts from the
+ * server rule is a lead silently lost.
+ *
+ * `zod/mini` rather than `zod`: identical validation, functional rather than
+ * method-chained, and it tree-shakes. The full builder ships ~370 KB
+ * uncompressed to every page on the site, including the two that have no form
+ * on them, which is more than the rest of the page's JavaScript put together.
  */
 
-import { z } from "zod";
+import * as z from "zod/mini";
 import { GPU_COUNT_OPTIONS, WORKLOAD_OPTIONS } from "@/content/form";
 
 const gpuCountValues = GPU_COUNT_OPTIONS.map((o) => o.value) as [string, ...string[]];
@@ -19,46 +25,84 @@ function startOfToday(): Date {
   return d;
 }
 
-export const reservationSchema = z.object({
-  company: z
-    .string()
-    .trim()
-    .min(1, "Company is required.")
-    .max(120, "Keep this under 120 characters."),
+/**
+ * `YYYY-MM-DD` to a local Date, or null if that day does not exist.
+ *
+ * Parsed by hand rather than through `new Date(string)`, which both applies
+ * UTC to bare dates and rolls impossible ones forward without complaint.
+ */
+function toLocalDate(v: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+  if (!m) return null;
+  const [y, mo, day] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const d = new Date(y, mo - 1, day);
+  const survived = d.getFullYear() === y && d.getMonth() === mo - 1 && d.getDate() === day;
+  return survived ? d : null;
+}
 
-  name: z
-    .string()
-    .trim()
-    .min(1, "Your name is required.")
-    .max(120, "Keep this under 120 characters."),
-
-  email: z
-    .string()
-    .trim()
-    .min(1, "Work email is required.")
-    .max(200, "Keep this under 200 characters.")
-    .pipe(z.email({ message: "That does not look like an email address." }))
-    .refine((v) => !FREE_EMAIL_DOMAINS.has(v.split("@")[1]?.toLowerCase() ?? ""), {
-      message: "Please use your work email — it helps us route this to the right person.",
-    }),
-
-  gpuCount: z.enum(gpuCountValues, { message: "Tell us how many GPUs you need." }),
-
-  startDate: z
-    .string()
-    .min(1, "A target start date is required.")
-    .refine((v) => /^\d{4}-\d{2}-\d{2}$/.test(v), { message: "Use a valid date." })
-    .refine(
-      (v) => {
-        const d = new Date(`${v}T00:00:00`);
-        return !Number.isNaN(d.getTime()) && d >= startOfToday();
-      },
-      { message: "Pick a date that has not already passed." },
+/**
+ * A trimmed, required, length-capped string — every text field on the form.
+ *
+ * A missing key is treated as an empty one on purpose. The form always sends
+ * a string, but the API route accepts arbitrary JSON, and "Company is
+ * required." is a better answer to a missing field than "Invalid input".
+ */
+const text = (label: string, max: number) =>
+  z.pipe(
+    z.pipe(
+      z.unknown(),
+      z.transform((v) => (typeof v === "string" ? v.trim() : v == null ? "" : v)),
     ),
+    z.string({ error: label }).check(z.minLength(1, label), z.maxLength(max, `Keep this under ${max} characters.`)),
+  );
 
-  workload: z.enum(workloadValues, { message: "Pick the closest workload." }),
+export const reservationSchema = z.object({
+  company: text("Company is required.", 120),
 
-  notes: z.string().trim().max(2000, "Keep notes under 2000 characters.").optional().or(z.literal("")),
+  name: text("Your name is required.", 120),
+
+  email: z.pipe(
+    text("Work email is required.", 200),
+    z.string().check(
+      z.email("That does not look like an email address."),
+      z.refine((v) => !FREE_EMAIL_DOMAINS.has(v.split("@")[1]?.toLowerCase() ?? ""), {
+        error: "Please use your work email — it helps us route this to the right person.",
+      }),
+    ),
+  ),
+
+  gpuCount: z.enum(gpuCountValues, { error: "Tell us how many GPUs you need." }),
+
+  startDate: z.pipe(
+    z.pipe(
+      z.unknown(),
+      z.transform((v) => (typeof v === "string" ? v : v == null ? "" : v)),
+    ),
+    z.string({ error: "A target start date is required." }).check(
+    z.minLength(1, "A target start date is required."),
+    // Shape, then reality. `new Date("2027-02-31")` is not an error in
+    // JavaScript — it quietly becomes 3 March — so the only way to reject an
+    // impossible date is to check that it survives the round trip.
+    z.refine((v) => /^\d{4}-\d{2}-\d{2}$/.test(v), { error: "Use a valid date." }),
+    z.refine((v) => toLocalDate(v) !== null, { error: "That date does not exist." }),
+    z.refine(
+      (v) => {
+        const d = toLocalDate(v);
+        return d !== null && d >= startOfToday();
+      },
+      { error: "Pick a date that has not already passed." },
+    ),
+    ),
+  ),
+
+  workload: z.enum(workloadValues, { error: "Pick the closest workload." }),
+
+  notes: z.optional(
+    z.pipe(
+      z.pipe(z.string(), z.transform((v) => v.trim())),
+      z.string().check(z.maxLength(2000, "Keep notes under 2000 characters.")),
+    ),
+  ),
 });
 
 export type ReservationInput = z.infer<typeof reservationSchema>;
@@ -110,14 +154,7 @@ const FREE_EMAIL_DOMAINS = new Set([
  * option. GPU count and start date tier every lead, and a default would mean
  * every untouched form silently reports "1–2 GPUs".
  */
-export type ReservationFormState = Record<keyof ReservationInput, string>;
-
-export const EMPTY_FORM_STATE: ReservationFormState = {
-  company: "",
-  name: "",
-  email: "",
-  gpuCount: "",
-  startDate: "",
-  workload: "",
-  notes: "",
-};
+// The blank form and its type live in ./form-state, which carries no schema
+// dependency, and are re-exported here so callers still have one import to
+// reach for. A type-only re-export costs nothing at runtime.
+export type { ReservationFormState } from "./form-state";

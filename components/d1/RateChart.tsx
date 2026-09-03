@@ -195,7 +195,10 @@ export function RateChart() {
                 <div className="col-span-full border-t border-[var(--rule)] px-4 py-2.5 md:pl-4">
                   <p className="d1-label flex flex-wrap items-baseline gap-x-2 gap-y-1 normal-case tracking-[0.03em] text-[var(--ink-3)]">
                     {r.note && <span className="max-w-[68ch]">{r.note}</span>}
-                    <span className="inline-flex items-baseline gap-1.5 whitespace-nowrap">
+                    {/* Wraps: a long source label plus a date does not fit on
+                        one line at 375px, and a nowrap run here is what pushes
+                        the whole document sideways. */}
+                    <span className="inline-flex flex-wrap items-baseline gap-x-1.5">
                       <span aria-hidden className="text-[var(--rule-strong)]">↳</span>
                       {src.url ? (
                         <a
@@ -209,7 +212,7 @@ export function RateChart() {
                       ) : (
                         <span>{src.label}</span>
                       )}
-                      <span className="text-[var(--rule-strong)]">·</span>
+                      <span aria-hidden className="text-[var(--rule-strong)]">·</span>
                       <span className="d1-figure tracking-normal">
                         {formatAsOfShort(src.accessed)}
                       </span>

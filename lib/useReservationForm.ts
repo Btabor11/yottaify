@@ -13,14 +13,27 @@
 
 import { useCallback, useRef, useState } from "react";
 import { submitReservation } from "./submitReservation";
-import {
-  EMPTY_FORM_STATE,
-  validateReservation,
-  type FieldErrors,
-  type ReservationFormState,
-  type ReservationInput,
-} from "./validation";
+import { EMPTY_FORM_STATE } from "./form-state";
+import type { FieldErrors, ReservationFormState, ReservationInput } from "./validation";
 import { toMonth, trackReservationError, trackReservationStart, trackReservationSubmit } from "./analytics";
+
+/**
+ * The schema, fetched on demand.
+ *
+ * Validation cannot run before someone has typed something, so the schema does
+ * not belong in the page-load payload — it is the largest dependency the form
+ * has, and on a marketing page most visitors never submit. `warmValidator` is
+ * called the moment the form is touched, which is many seconds of human typing
+ * before the first check needs to exist, so the await below never actually
+ * waits in practice.
+ */
+type Validator = typeof import("./validation").validateReservation;
+let validatorPromise: Promise<Validator> | null = null;
+
+function warmValidator(): Promise<Validator> {
+  validatorPromise ??= import("./validation").then((m) => m.validateReservation);
+  return validatorPromise;
+}
 
 export type FormStatus = "idle" | "submitting" | "success" | "error";
 
@@ -65,6 +78,9 @@ export function useReservationForm(direction: string): UseReservationForm {
       if (!startedRef.current) {
         startedRef.current = true;
         trackReservationStart(direction);
+        // Someone is filling the form in. Fetch the schema now, while they
+        // are still typing, so it is present long before the first check.
+        void warmValidator();
       }
       setValues((prev) => ({ ...prev, [name]: value }));
       // Clear the error the moment the user starts fixing it. Nagging while
@@ -85,12 +101,15 @@ export function useReservationForm(direction: string): UseReservationForm {
   const handleBlur = useCallback(
     (name: keyof ReservationFormState) => {
       if (!attempted) return;
-      const result = validateReservation(values);
-      if (result.ok) {
-        setErrors({});
-        return;
-      }
-      setErrors((prev) => ({ ...prev, [name]: result.errors[name as keyof FieldErrors] }));
+      void (async () => {
+        const validate = await warmValidator();
+        const result = validate(values);
+        if (result.ok) {
+          setErrors({});
+          return;
+        }
+        setErrors((prev) => ({ ...prev, [name]: result.errors[name as keyof FieldErrors] }));
+      })();
     },
     [attempted, values],
   );
@@ -100,19 +119,22 @@ export function useReservationForm(direction: string): UseReservationForm {
       e.preventDefault();
       setAttempted(true);
       setFormError(null);
-
-      const validated = validateReservation(values);
-      if (!validated.ok) {
-        setErrors(validated.errors);
-        setStatus("idle");
-        trackReservationError(direction, "validation");
-        return;
-      }
-
-      setErrors({});
+      // Held from the first keystroke, so this resolves immediately in
+      // practice. Showing "submitting" while it settles keeps the button from
+      // looking inert if it somehow has not landed yet.
       setStatus("submitting");
 
       void (async () => {
+        const validate = await warmValidator();
+        const validated = validate(values);
+        if (!validated.ok) {
+          setErrors(validated.errors);
+          setStatus("idle");
+          trackReservationError(direction, "validation");
+          return;
+        }
+
+        setErrors({});
         const result = await submitReservation(validated.data);
 
         if (result.ok) {

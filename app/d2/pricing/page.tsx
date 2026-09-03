@@ -51,7 +51,7 @@ export default function D2PricingPage() {
         <header className="d2-shell border-b border-[var(--ink)] py-14 md:py-20">
           <div className="d2-page">
             <div className="lg:pt-3">
-              <p className="d2-figure text-[2.25rem] leading-none text-[var(--rule-strong)] lg:text-[3rem]">
+              <p className="d2-figure text-[2.25rem] leading-none text-[var(--ink-3)] lg:text-[3rem]">
                 §
               </p>
               <p className="d2-caps mt-2 text-[var(--ink-3)] lg:mt-3">Statement</p>
@@ -73,8 +73,10 @@ export default function D2PricingPage() {
                 {META.pricing.standfirst}
               </p>
 
-              {/* The abstract: three figures, set as a printed summary. */}
-              <dl className="mt-11 grid border-y border-[var(--ink)] sm:grid-cols-3">
+              {/* The abstract: three figures, set as a printed summary. Rules run
+                  between the columns on wide screens and between the rows when
+                  they stack, so the group never grows a stray segment. */}
+              <dl className="mt-11 grid divide-y divide-[var(--rule-strong)] border-y border-[var(--ink)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
                 {[
                   { label: "Our on-demand rate", value: RATE.display, tone: "var(--accent)" },
                   {
@@ -83,23 +85,16 @@ export default function D2PricingPage() {
                     tone: "var(--accent-2)",
                   },
                   { label: "Median across tracked providers", value: median.display, tone: "var(--ink)" },
-                ].map((cell, i) => (
-                  <div
-                    key={cell.label}
-                    className="border-[var(--rule-strong)] py-5 sm:px-6 sm:first:pl-0 sm:last:pr-0"
-                    style={{
-                      borderTopWidth: i > 0 ? 1 : 0,
-                      borderLeftWidth: 0,
-                    }}
-                  >
+                ].map((cell) => (
+                  <div key={cell.label} className="py-5 sm:px-7 sm:first:pl-0 sm:last:pr-0">
                     <dt className="d2-caps text-[0.5625rem] text-[var(--ink-3)]">{cell.label}</dt>
                     <dd
-                      className="d2-figure mt-2 text-[clamp(1.625rem,3.4vw,2.375rem)] leading-none"
+                      className="d2-display mt-2.5 text-[clamp(2rem,4vw,3rem)] leading-none"
                       style={{ color: cell.tone }}
                     >
                       {cell.value}
                     </dd>
-                    <dd className="d2-caps mt-2 text-[0.5rem] text-[var(--ink-3)]">{RATE.unit}</dd>
+                    <dd className="d2-caps mt-2.5 text-[0.5rem] text-[var(--ink-3)]">{RATE.unit}</dd>
                   </div>
                 ))}
               </dl>

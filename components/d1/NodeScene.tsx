@@ -20,6 +20,8 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { FLEET } from "@/content";
+import { SCENE } from "./palette";
+import type { SceneProps } from "@/components/shared/SceneMount";
 
 const COLS = 4;
 const ROWS = 2;
@@ -54,7 +56,7 @@ function LinkMesh({ pts }: { pts: THREE.Vector3[] }) {
 
   return (
     <lineSegments geometry={geometry}>
-      <lineBasicMaterial color="#4fe3c1" transparent opacity={0.28} />
+      <lineBasicMaterial color={SCENE.accent} transparent opacity={0.28} />
     </lineSegments>
   );
 }
@@ -101,7 +103,7 @@ function Traffic({ pts }: { pts: THREE.Vector3[] }) {
   return (
     <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
       <sphereGeometry args={[1, 8, 8]} />
-      <meshBasicMaterial color="#9dfff0" />
+      <meshBasicMaterial color={SCENE.accentHot} />
     </instancedMesh>
   );
 }
@@ -119,19 +121,19 @@ function Gpu({ position }: { position: THREE.Vector3 }) {
     <group position={position}>
       {/* package substrate */}
       <mesh geometry={PKG_GEO}>
-        <meshStandardMaterial color="#0f1517" roughness={0.78} metalness={0.18} />
+        <meshStandardMaterial color={SCENE.package} roughness={0.78} metalness={0.18} />
       </mesh>
       {/* hairline edges — the detail that makes it read as a drawing, not a render */}
       <lineSegments geometry={PKG_EDGES}>
-        <lineBasicMaterial color="#4a6067" />
+        <lineBasicMaterial color={SCENE.packageEdge} />
       </lineSegments>
 
       {/* die: dark with a cool rim rather than a glowing slab */}
       <mesh geometry={DIE_GEO} position={[0, 0.12, 0]}>
-        <meshStandardMaterial color="#101d1f" roughness={0.35} metalness={0.4} />
+        <meshStandardMaterial color={SCENE.hbm} roughness={0.35} metalness={0.4} />
       </mesh>
       <lineSegments geometry={DIE_EDGES} position={[0, 0.12, 0]}>
-        <lineBasicMaterial color="#4fe3c1" />
+        <lineBasicMaterial color={SCENE.accent} />
       </lineSegments>
 
       {/* HBM stacks flanking the die — the memory is the argument, so it is
@@ -140,8 +142,8 @@ function Gpu({ position }: { position: THREE.Vector3 }) {
         [-0.22, 0.22].map((z) => (
           <mesh key={`${x}-${z}`} geometry={HBM_GEO} position={[x, 0.12, z]}>
             <meshStandardMaterial
-              color="#12312c"
-              emissive="#4fe3c1"
+              color={SCENE.die}
+              emissive={SCENE.accent}
               emissiveIntensity={0.35}
               roughness={0.5}
             />
@@ -183,13 +185,13 @@ function Node({ progressRef }: { progressRef: React.RefObject<number> }) {
       {/* baseboard */}
       <mesh position={[0, 0, 0]}>
         <boxGeometry args={[COLS * PITCH_X + 0.5, 0.08, ROWS * PITCH_Z + 0.45]} />
-        <meshStandardMaterial color="#0b1112" roughness={0.9} metalness={0.05} />
+        <meshStandardMaterial color={SCENE.board} roughness={0.9} metalness={0.05} />
       </mesh>
       <lineSegments>
         <edgesGeometry
           args={[new THREE.BoxGeometry(COLS * PITCH_X + 0.5, 0.08, ROWS * PITCH_Z + 0.45)]}
         />
-        <lineBasicMaterial color="#2b3437" />
+        <lineBasicMaterial color={SCENE.boardEdge} />
       </lineSegments>
 
       {pts.map((p, i) => (
@@ -205,13 +207,14 @@ function Node({ progressRef }: { progressRef: React.RefObject<number> }) {
 export default function NodeScene({
   progressRef,
   active,
-}: {
-  progressRef: React.RefObject<number>;
-  active: boolean;
-}) {
+  onReady,
+}: SceneProps) {
   return (
     <Canvas
       // Stop rendering entirely when the section is off-screen.
+      // Reported to SceneMount so the drawing underneath only fades out
+      // once there is something real to fade to.
+      onCreated={() => onReady?.()}
       frameloop={active ? "always" : "never"}
       dpr={[1, 1.75]}
       gl={{ antialias: true, alpha: true, powerPreference: "low-power" }}
@@ -219,8 +222,8 @@ export default function NodeScene({
       style={{ pointerEvents: "none" }}
     >
       <ambientLight intensity={0.5} />
-      <directionalLight position={[4, 6, 3]} intensity={1.15} color="#cfe9ec" />
-      <directionalLight position={[-5, 2, -4]} intensity={0.4} color="#4fe3c1" />
+      <directionalLight position={[4, 6, 3]} intensity={1.15} color={SCENE.keyLight} />
+      <directionalLight position={[-5, 2, -4]} intensity={0.4} color={SCENE.accent} />
       <Node progressRef={progressRef} />
     </Canvas>
   );

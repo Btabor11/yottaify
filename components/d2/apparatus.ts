@@ -20,6 +20,7 @@ export const FOOTNOTE_ORDER = [
   "surveyMedian",
   "oracleList",
   "awsList",
+  "awsCapacityBlocks",
   "surveyCommitted",
   "nvidiaBlackwellUltra",
   "facility",

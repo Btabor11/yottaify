@@ -80,7 +80,7 @@ export function SpecsSection() {
           <p className="d1-label mt-6 flex flex-wrap items-baseline gap-x-2 text-[var(--ink-3)]">
             <span aria-hidden className="text-[var(--rule-strong)]">↳</span>
             {GPU.fullName} · {GPU.architectureName}
-            <span className="text-[var(--rule-strong)]">·</span>
+            <span aria-hidden className="text-[var(--rule-strong)]">·</span>
             <a
               href={source(HEADLINE_ARGUMENT.sourceId).url ?? undefined}
               target="_blank"
@@ -89,7 +89,7 @@ export function SpecsSection() {
             >
               {source(HEADLINE_ARGUMENT.sourceId).label}
             </a>
-            <span className="text-[var(--rule-strong)]">·</span>
+            <span aria-hidden className="text-[var(--rule-strong)]">·</span>
             <span className="d1-figure tracking-normal">
               {formatAsOfShort(source(HEADLINE_ARGUMENT.sourceId).accessed)}
             </span>

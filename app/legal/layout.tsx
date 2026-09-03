@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Newsreader, Spline_Sans_Mono } from "next/font/google";
 import { SITE } from "@/config/site";
 import { LEGAL_NOTICE, FOOTER } from "@/content";
+import "./legal.css";
 
 const serif = Newsreader({
   subsets: ["latin"],
@@ -20,28 +21,7 @@ const mono = Spline_Sans_Mono({
 
 export default function LegalLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      className={`${serif.variable} ${mono.variable} min-h-dvh`}
-      style={
-        {
-          "--bg": "#12110f",
-          "--surface": "#1a1815",
-          "--ink": "#efece5",
-          "--ink-2": "#a8a29a",
-          "--ink-3": "#78736c",
-          "--rule": "#2c2924",
-          "--rule-strong": "#413d36",
-          "--accent": "#e0b64a",
-          "--accent-ink": "#12110f",
-          "--focus": "#e0b64a",
-          "--fb": "var(--legal-serif)",
-          "--fd": "var(--legal-serif)",
-          "--fm": "var(--legal-mono)",
-          background: "var(--bg)",
-          color: "var(--ink)",
-        } as React.CSSProperties
-      }
-    >
+    <div className={`legal ${serif.variable} ${mono.variable} min-h-dvh`}>
       <a href="#legal-body" className="skip-link">
         Skip to content
       </a>

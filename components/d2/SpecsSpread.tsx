@@ -62,15 +62,18 @@ export function SpecsSpread() {
           <div className="grid items-start gap-x-12 gap-y-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
             <div>
               <p className="d2-caps text-[var(--accent)]">Per 8-GPU node</p>
-              <p className="mt-3 flex flex-wrap items-baseline gap-x-3">
-                <span className="d2-figure text-[clamp(3.5rem,10vw,7.5rem)] leading-[0.85] text-[var(--accent)]">
+              {/* Set in the display serif, not the mono: a monospaced comma
+                  occupies a full digit cell, which knocks a hole in the middle
+                  of the one number the page is built around. */}
+              <p className="mt-2 flex flex-wrap items-baseline gap-x-3">
+                <span className="d2-display text-[clamp(4rem,11.5vw,9rem)] leading-[0.8] text-[var(--accent)]">
                   <Ink>{NODE.hbmGbFormatted}</Ink>
                 </span>
-                <span className="d2-display text-[clamp(1.5rem,3vw,2.25rem)] text-[var(--ink-2)]">
+                <span className="d2-display text-[clamp(1.625rem,3.2vw,2.5rem)] text-[var(--ink-2)]">
                   GB
                 </span>
               </p>
-              <p className="d2-caps mt-1 text-[var(--ink-3)]">
+              <p className="d2-caps mt-4 text-[var(--ink-3)]">
                 HBM3e · {NODE.hbmTbFormatted} TB · {NODE.domain}
                 <Cite sourceId={HEADLINE_ARGUMENT.sourceId} />
               </p>
@@ -190,7 +193,7 @@ export function SpecsSpread() {
                   delay={Math.min(i * 0.06, 0.24)}
                   className="grid gap-x-8 gap-y-2 border-b border-[var(--rule)] py-5 lg:grid-cols-[3rem_minmax(0,16rem)_minmax(0,1fr)]"
                 >
-                  <span className="d2-figure text-[1.25rem] leading-none text-[var(--rule-strong)]">
+                  <span className="d2-figure text-[1.25rem] leading-none text-[var(--ink-3)]">
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <h3 className="d2-display text-[1.375rem] leading-tight">{w.title}</h3>

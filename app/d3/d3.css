@@ -1,0 +1,562 @@
+/* ---------------------------------------------------------------------------
+   D3 — "SUBSTATION"
+
+   The conceit: sixteen GPUs is not a cloud, it is a load. This direction reads
+   the whole business as an electrical system — a one-line diagram, a bus, a
+   feeder, 35 kW at the meter — and behaves like the control room in front of
+   it. Saturated, energised, and unapologetically a screen.
+
+   The reason this direction exists: D1 argues by instrumentation and D2 argues
+   by evidence. D3 argues by force. It is aimed at the founder who has to feel
+   that the thing on the other end is real and powered before they will read a
+   table, and its job is to make sixteen GPUs feel like a substation rather
+   than a rounding error.
+
+   Colour is the one thing here that genuinely moves. `--phase` is driven by
+   scroll progress and interpolates the live accent from volt-cyan through
+   plasma-violet, so the page changes temperature as you descend it. Under
+   reduced motion --phase is frozen and every gradient resolves to one colour.
+--------------------------------------------------------------------------- */
+
+@property --phase {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+.d3 {
+  /* Substrate. Blue-black rather than neutral — the room is lit by equipment. */
+  --bg: #05060b;
+  --surface: #0b0d17;
+  --surface-2: #121527;
+  /* Checked against every ground these can land on, including --row-ours,
+     the accent-tinted row in the rate table, which is lighter than
+     --surface-2 at the cold end of the accent travel:
+     ink 16.4:1 · ink-2 8.3:1 · ink-3 4.63:1, all worst case. */
+  --ink: #f2f4ff;
+  --ink-2: #a9b0cf;
+  --ink-3: #7b83a3;
+  --rule: #1b1f35;
+  --rule-strong: #2b3150;
+  /* Interactive borders need 3:1 against the surface they sit on. The binding
+     case is --row-ours, the accent-tinted table row: 3.06:1. */
+  --edge: #5e658d;
+  /* Resolved value of the .d3-row-ours tint at --phase 0. Not applied
+     directly — it exists so scripts/audit.mjs has a ground to check. */
+  --row-ours: #0e1c27;
+
+  /* The two poles the live accent travels between. */
+  --volt: #35e8ff;
+  --plasma: #a06bff;
+  /* Sodium, for anything provisional. */
+  --caution: #ffb545;
+  /* Signal red is reserved for errors only — nothing decorative uses it. */
+  --alarm: #ff6b6b;
+
+  /* Live accent. Interpolated in oklch so the midpoint stays saturated instead
+     of dipping through grey the way an sRGB mix would. */
+  --accent: color-mix(in oklch, var(--volt), var(--plasma) calc(var(--phase) * 100%));
+  --accent-ink: #05060b;
+  --accent-2: var(--volt);
+  --focus: var(--volt);
+  --hot: var(--plasma);
+
+  --fd: var(--d3-display);
+  --fb: var(--d3-sans);
+  --fm: var(--d3-mono);
+
+  /* Coarser grain than D1, screen-blended: this is emission, not film stock. */
+  --grain-opacity: 0.042;
+  --grain-blend: screen;
+  --grain-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--fb);
+  color-scheme: dark;
+}
+
+/* Freeze the colour travel for anyone who asked for less motion. Mid-scale, so
+   they get the direction's character rather than one end of it. */
+@media (prefers-reduced-motion: reduce) {
+  .d3 {
+    --phase: 0.45 !important;
+  }
+}
+
+/* --- Type roles -------------------------------------------------------- */
+
+/* Display. The width axis is a variable, so a component can drive it from
+   scroll, hover, or state without touching font-size or layout. */
+.d3-display {
+  font-family: var(--fd);
+  font-weight: 700;
+  font-variation-settings: "wdth" var(--wdth, 100);
+  line-height: 0.86;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+}
+
+/* Wide, light setting for standfirsts that need to feel like signage. */
+.d3-wide {
+  font-family: var(--fd);
+  font-weight: 500;
+  font-variation-settings: "wdth" var(--wdth, 125);
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+.d3-body {
+  font-family: var(--fb);
+  font-weight: 400;
+  line-height: 1.58;
+  letter-spacing: -0.004em;
+}
+
+/* Telemetry label. Every piece of chrome on this page is one of these. */
+.d3-tag {
+  font-family: var(--fm);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  line-height: 1.3;
+}
+
+.d3-figure {
+  font-family: var(--fm);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  letter-spacing: -0.03em;
+}
+
+/* --- Structure --------------------------------------------------------- */
+
+.d3-shell {
+  width: 100%;
+  max-width: 90rem;
+  margin-inline: auto;
+  padding-inline: clamp(1.25rem, 4vw, 4rem);
+}
+
+/* The bus: a vertical conductor running down the left of every section, with
+   the section number sitting on it like a tap. It is the device that makes the
+   page read as one circuit rather than a stack of blocks. */
+.d3-bus {
+  display: grid;
+  /* minmax(0, 1fr), not 1fr: an auto-minimum track is sized to its content's
+     minimum, so one wide figure inside it drags the whole page sideways on a
+     phone instead of being asked to shrink. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+}
+@media (min-width: 1024px) {
+  .d3-bus {
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    gap: 0 2.5rem;
+  }
+  .d3-bus > :first-child {
+    position: relative;
+  }
+  .d3-bus > :first-child::after {
+    content: "";
+    position: absolute;
+    top: 3.5rem;
+    bottom: -1rem;
+    left: 0.5rem;
+    width: 1px;
+    background: linear-gradient(
+      to bottom,
+      var(--rule-strong),
+      color-mix(in oklab, var(--accent) 35%, transparent) 40%,
+      transparent
+    );
+  }
+}
+
+/* Panel: the recurring container. A hairline box with an energised top edge. */
+.d3-panel {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+}
+.d3-panel::before {
+  content: "";
+  position: absolute;
+  inset: -1px -1px auto -1px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--accent) 70%, transparent) 20%,
+    color-mix(in oklab, var(--accent) 70%, transparent) 80%,
+    transparent
+  );
+}
+
+/* Corner ticks. Cheap, and they do more for "engineered" than a border-radius
+   ever will. */
+.d3-ticks::before,
+.d3-ticks::after {
+  content: "";
+  position: absolute;
+  width: 0.5rem;
+  height: 0.5rem;
+  border: 1px solid var(--accent);
+  pointer-events: none;
+}
+.d3-ticks::before {
+  top: -1px;
+  left: -1px;
+  border-right: 0;
+  border-bottom: 0;
+}
+.d3-ticks::after {
+  bottom: -1px;
+  right: -1px;
+  border-left: 0;
+  border-top: 0;
+}
+
+/* --- Energised surfaces ------------------------------------------------ */
+
+/* Scanline field, used behind hero and section transitions. Static gradient,
+   so it costs nothing and reads as CRT rather than as a loading state. */
+.d3-scan {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--ink) 3%, transparent) 0 1px,
+    transparent 1px 3px
+  );
+}
+
+/* Measurement grid. Two overlaid gradients, tinted by the live accent so it
+   drifts with the page. */
+.d3-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--accent) 9%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--accent) 9%, transparent) 1px, transparent 1px);
+  background-size: 3.5rem 3.5rem;
+  mask-image: radial-gradient(120% 80% at 50% 0%, #000 20%, transparent 78%);
+}
+
+/* --- Load choreography -------------------------------------------------
+   Base state is the finished state. Keyframes animate *from* an offset with
+   no fill-mode, so the hero headline is real text on the very first paint.
+------------------------------------------------------------------------ */
+
+@keyframes d3-charge {
+  from {
+    opacity: 0;
+    transform: translateY(0.6rem);
+    font-variation-settings: "wdth" 62;
+  }
+}
+
+@keyframes d3-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+}
+
+@keyframes d3-bar {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.d3-charge {
+  animation: d3-charge 900ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+.d3-rise {
+  animation: d3-rise 700ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+.d3-draw {
+  transform-origin: left;
+  animation: d3-bar 1000ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/* --- Controls ---------------------------------------------------------- */
+
+.d3-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.95rem 1.75rem;
+  font-family: var(--fm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  clip-path: polygon(0 0, calc(100% - 0.6rem) 0, 100% 0.6rem, 100% 100%, 0.6rem 100%, 0 calc(100% - 0.6rem));
+  transition:
+    filter 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.d3-btn:hover:not(:disabled) {
+  filter: brightness(1.12);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent) 45%, transparent), 0 0 32px -6px var(--accent);
+  transform: translateY(-1px);
+}
+.d3-btn:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.d3-btn-ghost {
+  color: var(--ink);
+  background: transparent;
+  border-color: var(--edge);
+}
+.d3-btn-ghost:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: none;
+  filter: none;
+}
+
+/* Inputs read as terminal fields: dark well, energised on focus. */
+.d3-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--edge);
+  border-radius: 0;
+  padding: 0.7rem 0.85rem;
+  font-family: var(--fb);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  color: var(--ink);
+  transition:
+    border-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.d3-input::placeholder {
+  color: var(--ink-3);
+}
+.d3-input:hover:not(:disabled) {
+  border-color: color-mix(in oklab, var(--accent) 55%, var(--edge));
+}
+.d3-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 0 22px -8px var(--accent);
+}
+.d3-input[aria-invalid="true"] {
+  border-color: var(--alarm);
+  box-shadow: inset 2px 0 0 var(--alarm);
+}
+
+.d3-select {
+  appearance: none;
+  padding-right: 2rem;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-2) 50%),
+    linear-gradient(135deg, var(--ink-2) 50%, transparent 50%);
+  background-position: calc(100% - 1.1rem) 1.05rem, calc(100% - 0.75rem) 1.05rem;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.d3-textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
+
+/* Breaker-style selector: a physical-feeling switch for the two fields that
+   tier the lead. Closed = energised. */
+.d3-breaker {
+  position: relative;
+  display: block;
+  cursor: pointer;
+  padding: 0.85rem 0.95rem 0.85rem 2.4rem;
+  background: var(--bg);
+  border: 1px solid var(--edge);
+  transition:
+    border-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.d3-breaker:hover {
+  border-color: color-mix(in oklab, var(--accent) 55%, var(--edge));
+}
+.d3-breaker input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+/* The switch body */
+.d3-breaker::before {
+  content: "";
+  position: absolute;
+  left: 0.85rem;
+  top: 1.05rem;
+  width: 0.7rem;
+  height: 1.2rem;
+  border: 1px solid var(--edge);
+  transition: border-color 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+/* The contact, which travels when the breaker closes */
+.d3-breaker::after {
+  content: "";
+  position: absolute;
+  left: 0.95rem;
+  top: 1.75rem;
+  width: 0.5rem;
+  height: 0.35rem;
+  background: var(--ink-3);
+  transition:
+    top 200ms cubic-bezier(0.5, 0, 0.1, 1),
+    background-color 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.d3-breaker:has(input:checked) {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 9%, var(--bg));
+}
+.d3-breaker:has(input:checked)::before {
+  border-color: var(--accent);
+}
+.d3-breaker:has(input:checked)::after {
+  top: 1.2rem;
+  background: var(--accent);
+  box-shadow: 0 0 12px -1px var(--accent);
+}
+.d3-breaker:has(input:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* --- Links ------------------------------------------------------------- */
+
+.d3-link {
+  position: relative;
+  color: var(--accent);
+  transition: color 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.d3-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.15em;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0.999);
+  transform-origin: right;
+  opacity: 0.45;
+  transition:
+    opacity 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.d3-link:hover::after {
+  opacity: 1;
+  transform-origin: left;
+}
+
+/* --- Tables ------------------------------------------------------------ */
+
+.d3-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.d3-table th,
+.d3-table td {
+  text-align: left;
+  vertical-align: baseline;
+  padding: 0.85rem 0.9rem;
+  border-bottom: 1px solid var(--rule);
+}
+.d3-table thead th {
+  border-bottom: 1px solid var(--rule-strong);
+  background: var(--surface);
+  padding-block: 0.6rem;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.d3-table td:first-child,
+.d3-table th:first-child {
+  padding-left: 0;
+}
+.d3-table td:last-child,
+.d3-table th:last-child {
+  padding-right: 0;
+}
+.d3-num {
+  text-align: right !important;
+  font-family: var(--fm);
+  letter-spacing: -0.03em;
+}
+/* The row that is us. Declared as a solid token rather than an alpha mix so
+   its contrast can be checked rather than guessed at; --row-ours is the value
+   the mix resolves to at the cold end of the accent travel, which is the
+   lightest it ever gets. */
+.d3-row-ours td,
+.d3-row-ours th {
+  background: color-mix(in oklab, var(--accent) 7%, transparent);
+}
+
+/* Narrow measure: each row becomes a channel block — name on the left, figure
+   on the right, and the note that explains it running full width underneath.
+   A console reads top to bottom on a phone; it does not scroll sideways. */
+@media (max-width: 33rem) {
+  .d3-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .d3-table tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    column-gap: 1rem;
+    padding-block: 0.9rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .d3-table th,
+  .d3-table td {
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+  .d3-table .d3-cell-note {
+    grid-column: 1 / -1;
+    margin-top: 0.45rem;
+  }
+}
+
+/* --- Status pips ------------------------------------------------------- */
+
+.d3-pip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  /* Capped so the label wraps inside a narrow chart column instead of setting
+     the column's minimum width. */
+  max-width: 100%;
+  font-family: var(--fm);
+  font-size: 0.5625rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+.d3-pip::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 0.4rem;
+  height: 0.4rem;
+  /* Baseline-aligned text needs the dot nudged onto the x-height. */
+  transform: translateY(-0.1em);
+  background: currentColor;
+  box-shadow: 0 0 8px -1px currentColor;
+}

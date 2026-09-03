@@ -9,30 +9,42 @@
  * a degraded one. Nothing is revealed by animation only.
  */
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 
 /** SSR-safe layout effect. */
 export const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
+/**
+ * The preference, read straight from the media query.
+ *
+ * Every effect that is about to start an animation must call this rather than
+ * trust a React state value. State cannot be correct on the first commit —
+ * the server does not know the preference — and one commit is long enough for
+ * a scroll runner to set `opacity: 0` on half the page.
+ */
 export function prefersReducedMotion(): boolean {
   if (typeof window === "undefined" || !window.matchMedia) return false;
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-/** Live-updating reduced-motion flag. Starts `false` on the server. */
+const MQ = "(prefers-reduced-motion: reduce)";
+
+function subscribe(onChange: () => void): () => void {
+  if (typeof window === "undefined" || !window.matchMedia) return () => {};
+  const mq = window.matchMedia(MQ);
+  mq.addEventListener("change", onChange);
+  return () => mq.removeEventListener("change", onChange);
+}
+
+/**
+ * Live-updating reduced-motion flag.
+ *
+ * `useSyncExternalStore` so the value is correct on the first client render
+ * rather than one commit late, and re-renders if the user changes the setting
+ * while the page is open.
+ */
 export function useReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(false);
-
-  useEffect(() => {
-    if (!window.matchMedia) return;
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(mq.matches);
-    const onChange = (e: MediaQueryListEvent) => setReduced(e.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-
-  return reduced;
+  return useSyncExternalStore(subscribe, prefersReducedMotion, () => false);
 }
 
 /**

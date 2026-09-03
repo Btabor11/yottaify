@@ -117,13 +117,26 @@ export const PRICE_ROWS: PriceRow[] = [
   },
   {
     id: "aws",
-    provider: "AWS",
+    // "on-demand" is in the name, not just the term column, because the charts
+    // have no term column and AWS now appears twice in the table.
+    provider: "AWS on-demand",
     qualifier: "Amazon EC2",
     category: "hyperscaler",
     low: 17.8,
     display: "$17.80",
     term: "On-demand",
     sourceId: "awsList",
+  },
+  {
+    id: "aws-capacity-blocks",
+    provider: "AWS Capacity Blocks",
+    qualifier: "Amazon EC2, same B300 instance",
+    category: "hyperscaler",
+    low: 14.04,
+    display: "$14.04",
+    term: "Reserved block",
+    sourceId: "awsCapacityBlocks",
+    note: "Cheaper than AWS on-demand above, and the lowest hyperscaler rate here. You book the block ahead and pay it up front, which is the lead time this page is about.",
   },
   {
     id: "committed",
@@ -209,7 +222,7 @@ export const METHODOLOGY = {
   points: [
     {
       label: "What counts as a rate",
-      body: "Published per-GPU-hour on-demand pricing for B300-class capacity. Where a provider prices by instance, we divide by the number of GPUs in that instance and say so.",
+      body: "Published per-GPU-hour pricing for B300-class capacity. Most rows are on-demand; where a row is a reserved product the term column says so, because reserving a block ahead and taking capacity now are not the same purchase. Where a provider prices by instance, we divide by the number of GPUs in that instance and say so.",
     },
     {
       label: "What counts as verified",

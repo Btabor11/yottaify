@@ -18,7 +18,11 @@ export const FLEET = {
   nodes: NODE_COUNT,
   gpusPerNode: GPUS_PER_NODE,
   cooling: "Air-cooled",
-  shape: `${FLEET_TOTAL} B300s, configured as ${NODE_COUNT} ${GPUS_PER_NODE}-GPU nodes.`,
+  /**
+   * Node count is spelled out here on purpose: "as 2 8-GPU nodes" puts two
+   * digits against each other and reads as a typo.
+   */
+  shape: `${FLEET_TOTAL} B300s, configured as ${NODE_COUNT === 2 ? "two" : NODE_COUNT} ${GPUS_PER_NODE}-GPU nodes.`,
   sourceId: "facility",
 } as const;
 

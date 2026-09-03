@@ -1,0 +1,38 @@
+/* ---------------------------------------------------------------------------
+   Legal pages.
+
+   These are not a fourth design direction. They are a neutral document shell
+   that reads as the same company from any of the three, which is why the
+   palette is dimmer and warmer than D1 and carries no accent of its own beyond
+   the draft marker.
+
+   When a direction is promoted to `/`, this is the one place that should be
+   re-pointed at that direction's tokens.
+--------------------------------------------------------------------------- */
+
+.legal {
+  --bg: #12110f;
+  --surface: #1a1815;
+  /* Every ink clears 4.5:1 against BOTH --bg and --surface, because these
+     pages set body copy on the surface as well as the ground.
+     ink 15.0:1 · ink-2 7.0:1 · ink-3 4.63:1 (worst case, on --surface) */
+  --ink: #efece5;
+  --ink-2: #a8a29a;
+  --ink-3: #86827b;
+  --rule: #2c2924;
+  --rule-strong: #413d36;
+  /* Control borders need 3:1 as UI components. 3.12:1 on --surface. */
+  --edge: #6c665e;
+  --accent: #e0b64a;
+  --accent-ink: #12110f;
+  --focus: #e0b64a;
+
+  --fd: var(--legal-serif);
+  --fb: var(--legal-serif);
+  --fm: var(--legal-mono);
+
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--fb);
+  color-scheme: dark;
+}

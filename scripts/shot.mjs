@@ -1,14 +1,23 @@
 /**
  * Screenshot harness for design review.
  *
- * node scripts/shot.mjs <route> <label> [width] [height] [--full] [--reduce] [--nojs]
+ * node scripts/shot.mjs <route> <label> [width] [height] [--w=] [--h=]
+ *                       [--full] [--reduce] [--nojs] [--at=#selector]
  *
  * Dev-only tooling. Not part of the shipped site.
  */
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
 
-const [, , route = "/d1", label = "shot", w = "1440", h = "900", ...flags] = process.argv;
+const argv = process.argv.slice(2);
+const flags = argv.filter((a) => a.startsWith("--"));
+// Flags may appear anywhere, so positionals are whatever is left over.
+const [route = "/d1", label = "shot", wArg, hArg] = argv.filter((a) => !a.startsWith("--"));
+
+const flagValue = (name) => flags.find((f) => f.startsWith(`--${name}=`))?.slice(name.length + 3);
+const w = flagValue("w") ?? wArg ?? "1440";
+const h = flagValue("h") ?? hArg ?? "900";
+
 const full = flags.includes("--full");
 const reduce = flags.includes("--reduce");
 const nojs = flags.includes("--nojs");

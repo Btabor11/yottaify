@@ -29,17 +29,14 @@ export function Hero() {
 
       <div className="d1-shell relative pt-14 pb-0 md:pt-20">
         {/* --- eyebrow ---------------------------------------------------- */}
-        <div
-          className="d1-fade-up flex flex-wrap items-center gap-x-3 gap-y-2"
-          style={{ animationDelay: "60ms" }}
-        >
-          <span aria-hidden className="relative flex h-1.5 w-1.5">
-            <span
-              className="absolute inset-0 rounded-full"
-              style={{ background: "var(--accent-live, var(--accent))" }}
-            />
+        {/* The dot holds the first line and the label wraps beside it. Letting
+            the two be wrap siblings orphaned the dot onto a line of its own as
+            soon as the label needed two lines. */}
+        <div className="d1-fade-up flex items-start gap-x-3" style={{ animationDelay: "60ms" }}>
+          <span aria-hidden className="relative mt-[0.45em] flex h-1.5 w-1.5 shrink-0">
+            <span className="d1-live absolute inset-0 rounded-full" />
           </span>
-          <p className="d1-label text-[var(--ink-2)]">{HERO.eyebrow}</p>
+          <p className="d1-label min-w-0 text-[var(--ink-2)]">{HERO.eyebrow}</p>
         </div>
 
         {/* --- headline ---------------------------------------------------
@@ -151,7 +148,7 @@ export function Hero() {
                 className="border-b border-[var(--rule)] px-0 py-4 sm:border-b-0 sm:border-r sm:px-4 sm:first:pl-0 sm:last:border-r-0"
               >
                 <dt className="d1-label flex items-baseline gap-1.5 text-[var(--ink-3)]">
-                  <span className="d1-figure text-[0.5625rem] text-[var(--rule-strong)]">
+                  <span className="d1-figure text-[0.5625rem] text-[var(--ink-3)]">
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   {fact.label}

@@ -52,7 +52,7 @@ export const SOURCES: Record<string, Source> = {
     url: "https://www.oracle.com/cloud/price-list/",
     kind: "rate-card",
     accessed: "2026-09-02",
-    note: "Oracle's public price list. Rate read from the published GPU compute shapes.",
+    note: "Oracle's public price list, GPU accelerated compute table, shape BM.GPU.B300.8. Oracle publishes this column as a per-GPU-hour rate, so no arithmetic was applied. The table is populated by script, so the figure is only visible in a rendered browser.",
   },
 
   awsList: {
@@ -62,7 +62,17 @@ export const SOURCES: Record<string, Source> = {
     url: "https://aws.amazon.com/ec2/pricing/on-demand/",
     kind: "rate-card",
     accessed: "2026-09-02",
-    note: "AWS's public on-demand rate card. Per-GPU figure is the published instance rate divided by GPUs per instance.",
+    note: "AWS's public on-demand rate card, instance p6-b300.48xlarge in US West (Oregon), $142.4160 per instance-hour across 8 B300s. AWS publishes per instance, not per GPU, so the per-GPU figure is that rate divided by eight. The rate card defaults to a region where this instance is not offered; the region selector has to be set to see it.",
+  },
+
+  awsCapacityBlocks: {
+    id: "awsCapacityBlocks",
+    label: "AWS EC2 Capacity Blocks pricing",
+    // AWS's published Capacity Blocks rate card. Verified reachable 3 Sep 2026.
+    url: "https://aws.amazon.com/ec2/capacityblocks/pricing/",
+    kind: "rate-card",
+    accessed: "2026-09-03",
+    note: "AWS's published Capacity Blocks rate card, instance p6-b300.48xlarge, $112.32 per instance-hour across 8 B300s in US regions. Again per instance, so the per-GPU figure is that divided by eight. It sits below the AWS on-demand rate above, so we list it rather than showing only the higher AWS number. It is a reserve-ahead product: the block is booked in advance and charged up front, and AWS states the price moves with supply and demand.",
   },
 
   surveyVerified: {

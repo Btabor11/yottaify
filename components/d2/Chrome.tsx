@@ -37,12 +37,15 @@ export function D2Masthead({ onPricingPage = false }: { onPricingPage?: boolean 
 
   return (
     <header className="sticky top-0 z-50 bg-[var(--bg)]">
-      {/* Folio line. The date is the point — this direction is dated matter. */}
+      {/* Folio line. The date is the point — this direction is dated matter.
+          Collapsed with a grid row rather than a max-height, so the open state
+          is whatever the content needs. A fixed height was clipping the second
+          line the moment the two halves wrapped onto separate rows. */}
       <div
-        className="overflow-hidden border-b border-[var(--rule)] transition-[max-height,opacity] duration-500"
-        style={{ maxHeight: compact ? 0 : "3rem", opacity: compact ? 0 : 1 }}
+        className="grid border-b border-[var(--rule)] transition-[grid-template-rows,opacity] duration-500"
+        style={{ gridTemplateRows: compact ? "0fr" : "1fr", opacity: compact ? 0 : 1 }}
       >
-        <div className="d2-shell flex flex-wrap items-center justify-between gap-x-6 gap-y-1 py-2">
+        <div className="d2-shell flex min-h-0 flex-wrap items-center justify-between gap-x-6 gap-y-1 overflow-hidden py-2">
           <p className="d2-caps text-[0.5625rem] text-[var(--ink-3)]">
             Prospectus · No. 01 · {formatAsOfShort(SITE.pricingAsOf)}
           </p>
@@ -52,12 +55,15 @@ export function D2Masthead({ onPricingPage = false }: { onPricingPage?: boolean 
         </div>
       </div>
 
-      <div className="d2-shell flex items-center justify-between gap-6 py-3">
+      <div className="d2-shell flex items-center justify-between gap-3 py-3 sm:gap-6">
         <D2Logo />
 
-        <nav aria-label="Contents" className="flex items-center gap-5">
+        <nav aria-label="Contents" className="flex min-w-0 items-center gap-3 sm:gap-5">
           {onPricingPage ? (
-            <Link href="/d2" className="d2-caps text-[var(--ink-2)] transition-colors hover:text-[var(--accent)]">
+            <Link
+              href="/d2"
+              className="d2-caps truncate text-[var(--ink-2)] transition-colors hover:text-[var(--accent)]"
+            >
               ← Prospectus
             </Link>
           ) : (
@@ -77,7 +83,7 @@ export function D2Masthead({ onPricingPage = false }: { onPricingPage?: boolean 
           <a
             href={onPricingPage ? "/d2#reserve" : "#reserve"}
             onClick={() => trackCta("d2", "masthead")}
-            className="d2-btn px-4 py-2 text-[0.625rem]"
+            className="d2-btn shrink-0 px-3 py-2 text-[0.625rem] sm:px-4"
           >
             Reserve
           </a>

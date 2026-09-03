@@ -25,10 +25,10 @@ export function Chapter({
   return (
     <header id={id} className="d2-page pb-10 md:pb-14">
       <div className="lg:pt-2">
-        <p className="d2-figure text-[2.25rem] leading-none text-[var(--rule-strong)] lg:text-[3rem]">
+        <p className="d2-figure text-[2.25rem] leading-none text-[var(--ink-3)] lg:text-[3rem]">
           {index}
         </p>
-        <p className="d2-caps mt-2 text-[var(--ink-3)] lg:mt-3">{eyebrow}</p>
+        <p className="d2-caps mt-2 text-[var(--ink-2)] lg:mt-3">{eyebrow}</p>
       </div>
 
       <div>

@@ -67,12 +67,21 @@
   }
 }
 
-.d1 {
+/*
+ * The live status dot, drifting slowly through three related hues.
+ *
+ * The animation belongs on the dot, not on `.d1`. Animating a custom property
+ * invalidates style on every element that could inherit it, so declaring this
+ * on the page root made one 6px dot recalculate and repaint the entire
+ * ten-thousand-pixel document every frame — the page never went idle.
+ */
+.d1-live {
+  background: var(--accent-live, var(--accent));
   animation: d1-hue-drift 26s linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .d1 {
+  .d1-live {
     animation: none;
   }
 }

@@ -10,9 +10,14 @@
  *
  * A local endpoint also ships at /api/reservation, which re-validates with the
  * same zod schema. Point the env var at it to exercise the round trip.
+ *
+ * Input arrives already validated — `ReservationInput` is only constructible
+ * by passing the schema — so there is no second client-side check here. The
+ * server is the boundary that has to be suspicious, and keeping the schema out
+ * of this module keeps zod off the page-load path entirely.
  */
 
-import { validateReservation, type FieldErrors, type ReservationInput } from "./validation";
+import type { FieldErrors, ReservationInput } from "./validation";
 
 export type SubmitResult =
   | { ok: true; mode: "posted" | "stubbed" }
@@ -22,14 +27,33 @@ export type SubmitResult =
 const ENDPOINT = process.env.NEXT_PUBLIC_RESERVATION_ENDPOINT;
 const TIMEOUT_MS = 15_000;
 
-export async function submitReservation(data: ReservationInput): Promise<SubmitResult> {
-  const validated = validateReservation(data);
-  if (!validated.ok) {
-    return { ok: false, reason: "validation", errors: validated.errors };
-  }
+/** The known field names, so a hostile response cannot inject error keys. */
+const FIELD_NAMES = ["company", "name", "email", "gpuCount", "startDate", "workload", "notes"] as const;
 
+/**
+ * Field errors out of a 422 body, or null if the response is not shaped the
+ * way we expect. A remote endpoint is not obliged to answer in our format, so
+ * anything unrecognised falls through to the generic server message.
+ */
+async function readFieldErrors(res: Response): Promise<FieldErrors | null> {
+  try {
+    const body: unknown = await res.json();
+    const raw = (body as { errors?: unknown } | null)?.errors;
+    if (!raw || typeof raw !== "object") return null;
+    const errors: FieldErrors = {};
+    for (const key of FIELD_NAMES) {
+      const message = (raw as Record<string, unknown>)[key];
+      if (typeof message === "string" && message) errors[key] = message;
+    }
+    return Object.keys(errors).length ? errors : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function submitReservation(data: ReservationInput): Promise<SubmitResult> {
   const payload = {
-    ...validated.data,
+    ...data,
     submittedAt: new Date().toISOString(),
     // Where the lead came from. Which design direction converted is worth knowing.
     path: typeof window === "undefined" ? null : window.location.pathname,
@@ -57,6 +81,15 @@ export async function submitReservation(data: ReservationInput): Promise<SubmitR
       body: JSON.stringify(payload),
       signal: controller.signal,
     });
+
+    // The server validates independently and may know something the client
+    // does not — a blocked domain, a date it will not take. Unpack its field
+    // errors so they land on the fields concerned instead of becoming a
+    // shrug at the bottom of the form.
+    if (res.status === 422) {
+      const errors = await readFieldErrors(res);
+      if (errors) return { ok: false, reason: "validation", errors };
+    }
 
     if (!res.ok) {
       return {
