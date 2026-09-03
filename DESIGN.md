@@ -24,7 +24,8 @@ because each direction root (`.d1`, `.d2`) rebinds `--bg`, `--ink`, etc.
 **Rules:**
 
 - Never write a hex value in a component. Never write `bg-zinc-900`, `text-white`,
-  `border-neutral-800`, or any Tailwind palette colour.
+  `border-neutral-800`, or any Tailwind palette colour. The one exception is
+  `components/d3/palette.ts` — see section 2.
 - Use the semantic utility (`bg-surface`) or `text-[var(--ink-2)]` when you need a
   token Tailwind has no utility for.
 - Adding a colour means adding a token to `@theme` **and** binding it in every
@@ -32,40 +33,33 @@ because each direction root (`.d1`, `.d2`) rebinds `--bg`, `--ink`, etc.
 
 ---
 
-## 2. Directions
+## 2. The direction — `.d3` "Substation"
 
-Each direction is a self-contained visual argument. Do not blend them.
+One direction ships. D1 "Cold Room" and D2 "Ledger" were built, reviewed and
+dropped; they are recoverable from git history at commit `9745956` and nothing
+about them remains in the working tree.
 
-### `.d1` — "Cold Room" (`app/d1/d1.css`) — BUILT
-A readout. Near-black ground, hairline rules, teal signal, amber caution, red for
-expensive. Everything is measured, dated, and carries a channel identifier.
-Nothing decorative that is not also carrying information.
+Kinetic, saturated, high-voltage. `--accent` is a live `color-mix` driven by
+scroll position through `--phase`, so the page travels from a cold pole to a
+warm one as you move down it.
 
-- Type: Archivo (variable `wdth` axis) + Martian Mono. Headlines run at `wdth 62`
-  so they can be enormous and still fit. One family, two voices.
-- Roles: `.d1-display` `.d1-display-loose` `.d1-label` `.d1-figure` `.d1-body`
-- Structure: `.d1-shell` (max 96rem) · `.d1-sechead` · `.d1-grid-bg` · `.d1-ticked`
-- Controls: `.d1-field` `.d1-select` `.d1-seg` `.d1-btn` `.d1-btn-ghost` `.d1-link`
-- The segmented GPU-count control (`.d1-seg`) is the most important input on the
-  site — it is the largest and the only one with a filled selected state. Keep it that way.
+- Root class `.d3` on the route-group layout; tokens in `app/(site)/d3.css`.
+- Type roles: `.d3-display` `.d3-body` `.d3-figure` `.d3-tag` `.d3-pip`
+- Structure: `.d3-panel` `.d3-ticks` and the bay sections in `components/d3/`
+- WebGL scenes mount through `components/shared/SceneMount.tsx`, which gates on
+  reduced motion and WebGL support and renders a static still otherwise.
 
-### `.d2` — "Ledger" (`app/d2/d2.css`) — CSS + FONTS ONLY, NO PAGES YET
-Issue 01 of a prospectus, not a website. Warm paper, ink black, ledger red for
-figures needing attention, a real footnote apparatus. The reason it exists: a
-technical buyer's objection to a new provider is *evidentiary*, not aesthetic.
-A page that behaves like a document answers that objection with its form.
+**The class and folder are still named `d3`.** That is a deliberate deferral,
+not an oversight — renaming `.d3` touches the CSS, `palette.ts`, `audit.mjs`
+and every component, and was not worth doing without a build to verify against.
+Rename it in one pass, or leave it; do not half-rename it.
 
-- Type: Instrument Serif (display, one weight — size and space do the emphasis,
-  never bold) + Newsreader (`opsz` axis wired up) + Spline Sans Mono (figures).
-- Roles: `.d2-display` `.d2-prose` `.d2-standfirst` `.d2-caps` `.d2-figure` `.d2-fn`
-- Structure: `.d2-shell` (84rem) · `.d2-page` (7rem marginal column ≥1024) ·
-  `.d2-measure` (34rem ≈ 66ch) · `.d2-columns` · `.d2-dropcap` · `.d2-leader`
-- Controls: `.d2-input` (ruled line, not a box) `.d2-choice` `.d2-btn` `.d2-link`
-- Ledger: `.d2-table` `.d2-num` (right-aligned) `.d2-row-ours` `.d2-stamp`
+### Scene palettes are the one place colour is a literal
 
-`components/d2/` has Chapter, Chrome, Cite, Cover, Cta, Footnotes, Ledger,
-RateScale, Reveal. Missing: `app/d2/layout.tsx` and `app/d2/page.tsx`.
-Mirror `app/d1/layout.tsx` when building them.
+`components/d3/palette.ts` holds hex values because WebGL cannot read CSS
+variables. Every entry that mirrors a token carries a `/* --token */` comment,
+and `scripts/audit.mjs` fails if the two drift apart. This is the only
+sanctioned exception to section 1 — do not create another one.
 
 ---
 
@@ -111,28 +105,40 @@ This is the rule most likely to be broken. Read it twice.
 
 ---
 
-## 6. Visual review loop
+## 6. Verification
+
+Static gate — no browser, no dev server, runs in seconds:
 
 ```
-PORT=4310 npm run dev
-node scripts/shot.mjs /d1 d1-hero 1440 900
-node scripts/shot.mjs /d1 d1-full 1440 900 --full      # walks the page, fires reveals
-node scripts/shot.mjs /d1 d1-reduced 1440 900 --reduce # reduced-motion resting state
-node scripts/shot.mjs /d1 d1-nojs 1440 900 --nojs      # JS-off; content must be there
-node scripts/shot.mjs /d1 d1-form 1440 900 --at=#reserve
+npm run verify        # typecheck + lint + audit + verify:identity + verify:schema
 ```
 
-Output → `shots/`. The script also reports console errors and horizontal
-overflow. **Look at the screenshot before claiming a change is done.**
+`npm run audit` is the design-system enforcer: 14 checks covering hardcoded
+colour, palette/token drift, price and spec literals in components, forbidden
+price superlatives, the company name appearing outside config, source
+completeness, motion resting states, and the form working without JS.
+
+Browser checks — need `PORT=4310 npm run dev` in another terminal:
+
+```
+npm run shot -- / home 1440 900 --full     # walks the page, fires reveals
+npm run shot -- / home-reduced 1440 900 --reduce
+npm run shot -- / home-nojs 1440 900 --nojs
+npm run check:drift                        # does the scroll palette still travel
+npm run check:scroll                       # frame budget while scrolling
+npm run check:sweep                        # every route x every viewport
+npm run perf                               # FCP/LCP/CLS against a prod build
+```
+
+Output lands in `shots/`, which is gitignored. **Look at the screenshot before
+claiming a change is done.**
 
 Ship gate for any visual change: `--reduce` and `--nojs` both still legible,
 `hasHorizontalOverflow: false` at 390 / 768 / 1440.
 
----
-
 ## 7. Before you finish
 
-- [ ] `npm run typecheck` and `npm run lint` clean
+- [ ] `npm run verify` clean
 - [ ] No hex values or Tailwind palette colours added to a component
 - [ ] New strings live in `content/`, not in JSX
 - [ ] Loading, empty, error and disabled states exist for every new control
