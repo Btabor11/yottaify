@@ -1,0 +1,33 @@
+---
+description: Design system contract for this site — tokens, directions, motion and accessibility rules. Applies to all UI work.
+globs: ["app/**/*.{tsx,css}", "components/**/*.tsx", "content/**/*.ts"]
+alwaysApply: true
+---
+
+Read `DESIGN.md` in the repo root before any UI change. It is the contract.
+
+Hard rules, repeated here because they are the ones most often broken:
+
+1. **No hardcoded colour.** No hex in components. No `bg-zinc-*`, `text-white`,
+   `border-neutral-*`. Use semantic utilities (`bg-bg`, `text-ink`, `border-rule`)
+   or `text-[var(--ink-2)]`. Colour is rebound per direction on `.d1` / `.d2`.
+
+2. **No hardcoded strings.** Copy comes from `@/content`. Names and URLs come from
+   `config/site.ts`. The company name is not final — never type it into a component.
+
+3. **Base state is the final state.** Animate *from* an offset with `backwards` and
+   no fill-mode forwards. Never `opacity: 0` at rest. Never gate content on JS.
+   `prefers-reduced-motion` is a hard stop and must leave the page fully legible.
+
+4. **`--edge` is the only border allowed on an interactive control.** `--rule` and
+   `--rule-strong` are decorative. Never remove a focus ring.
+
+5. **Do not blend directions.** D1 is a cold instrument readout. D2 is a warm
+   printed prospectus. A change belongs to one of them.
+
+6. **Verify visually before claiming done.** `node scripts/shot.mjs <route> <label>`
+   with `--full`, `--reduce`, and `--nojs`. Check `hasHorizontalOverflow` at 390 /
+   768 / 1440.
+
+When adding any control, produce its loading, empty, error and disabled states in
+the same pass. Ideal-state-only UI is not finished UI.

@@ -1,0 +1,456 @@
+/* ---------------------------------------------------------------------------
+   D1 — "COLD ROOM"
+
+   The conceit: this page is a readout. Everything is measured, dated, and
+   carries a channel identifier. Near-black ground, hairline rules, teal for
+   signal, amber for caution, red for expensive. Nothing decorative that is not
+   also carrying information.
+--------------------------------------------------------------------------- */
+
+.d1 {
+  --bg: #07090a;
+  --surface: #0c1011;
+  --surface-2: #121718;
+  --ink: #e6ecec;
+  /* Contrast against --bg #07090a, small text (needs ≥ 4.5:1):
+     ink   ≈ 15.6:1 · ink-2 ≈ 9.4:1 · ink-3 ≈ 5.5:1
+     --rule / --rule-strong are decorative separators only.
+     --edge ≈ 3.7:1 and is the ONLY border used on interactive controls,
+     which need ≥ 3:1 as UI components. */
+  --ink-2: #a7b5b7;
+  --ink-3: #7d8c8f;
+  --rule: #1b2225;
+  --rule-strong: #313d41;
+  --edge: #5c6d72;
+  --accent: #4fe3c1;
+  --accent-ink: #04100d;
+  --accent-2: #7cc4ff;
+  --caution: #f0a24b;
+  --hot: #ff6b5a;
+  --focus: #4fe3c1;
+
+  --fd: var(--d1-sans);
+  --fb: var(--d1-sans);
+  --fm: var(--d1-mono);
+
+  --grain-opacity: 0.028;
+  --grain-blend: overlay;
+  --grain-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+
+  /* Slow accent hue drift — the one piece of animated colour. Reads as a live
+     instrument idling rather than a gradient effect. */
+  --accent-live: var(--accent);
+
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--fb);
+  font-variation-settings: "wdth" 100;
+}
+
+/* Registered so the colour interpolates rather than stepping. */
+@property --accent-live {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #4fe3c1;
+}
+
+@keyframes d1-hue-drift {
+  0%,
+  100% {
+    --accent-live: #4fe3c1;
+  }
+  33% {
+    --accent-live: #5ad9e3;
+  }
+  66% {
+    --accent-live: #58e8a8;
+  }
+}
+
+.d1 {
+  animation: d1-hue-drift 26s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .d1 {
+    animation: none;
+  }
+}
+
+/* --- Type roles -------------------------------------------------------- */
+
+/* Compressed display. The width axis does the work, not a condensed clone. */
+.d1-display {
+  font-family: var(--fd);
+  font-variation-settings: "wdth" 62, "wght" 600;
+  letter-spacing: -0.025em;
+  line-height: 0.86;
+  text-transform: uppercase;
+}
+
+.d1-display-loose {
+  font-family: var(--fd);
+  font-variation-settings: "wdth" 78, "wght" 500;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+}
+
+/* Every label, channel id, and unit. */
+.d1-label {
+  font-family: var(--fm);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+.d1-figure {
+  font-family: var(--fm);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  letter-spacing: -0.02em;
+}
+
+.d1-body {
+  font-family: var(--fb);
+  font-variation-settings: "wdth" 100, "wght" 400;
+  line-height: 1.62;
+  letter-spacing: 0.002em;
+}
+
+/* --- Structure --------------------------------------------------------- */
+
+/* The measured grid. 12 columns, wide gutters, a hard max so lines never run
+   past a comfortable measure on a 2560px display. */
+.d1-shell {
+  width: 100%;
+  max-width: 96rem;
+  margin-inline: auto;
+  padding-inline: clamp(1.25rem, 4vw, 4.5rem);
+}
+
+/* Section header: index number, rule, eyebrow. Repeats exactly, every time. */
+.d1-sechead {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1.25rem;
+  padding-block: 0.75rem;
+  border-top: 1px solid var(--rule-strong);
+}
+
+/* Hairline grid overlay — the "graph paper" ground. Pure CSS, zero JS. */
+.d1-grid-bg {
+  background-image:
+    linear-gradient(to right, var(--rule) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--rule) 1px, transparent 1px);
+  background-size: 4rem 4rem;
+  mask-image: radial-gradient(ellipse 120% 80% at 50% 0%, #000 0%, transparent 78%);
+}
+
+/* Corner ticks — the small detail that makes a panel read as an instrument. */
+.d1-ticked {
+  position: relative;
+}
+.d1-ticked::before,
+.d1-ticked::after {
+  content: "";
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-color: var(--rule-strong);
+  border-style: solid;
+  pointer-events: none;
+}
+.d1-ticked::before {
+  top: -1px;
+  left: -1px;
+  border-width: 1px 0 0 1px;
+}
+.d1-ticked::after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 1px 1px 0;
+}
+
+/* --- Hero load choreography -------------------------------------------
+
+   Base state is the FINAL state. Keyframes animate *from* a clipped/offset
+   position, with no fill-mode. Consequences:
+     · no JavaScript is involved, so a JS failure cannot hide the headline
+     · reduced motion collapses the duration and the text is simply there
+     · the headline paints on the first frame, so it can be the LCP element
+   Total choreography is under 700ms. Nothing to wait for.
+------------------------------------------------------------------------ */
+
+@keyframes d1-line-in {
+  from {
+    clip-path: inset(0 0 105% 0);
+    transform: translateY(0.14em);
+  }
+}
+
+@keyframes d1-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
+
+@keyframes d1-rule-draw {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.d1-line-in {
+  animation: d1-line-in 520ms var(--ease-out-expo) backwards;
+}
+.d1-fade-up {
+  animation: d1-fade-up 520ms var(--ease-out-expo) backwards;
+}
+.d1-rule-draw {
+  transform-origin: left;
+  animation: d1-rule-draw 720ms var(--ease-out-expo) backwards;
+}
+
+/* --- Scan sweep --------------------------------------------------------
+   A single travelling highlight on the fleet strip. Decorative, and clearly
+   so — it carries no numeric meaning. Paused when reduced motion is on. */
+
+@keyframes d1-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.d1-sweep {
+  animation: d1-sweep 5.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .d1-sweep {
+    display: none;
+  }
+}
+
+/* --- Bars --------------------------------------------------------------- */
+
+/* Hatched fill. Reads as "provisional" without needing a legend to explain it:
+   a hatched bar is a number we could not confirm. Colour is passed in via
+   --hatch so the same utility serves the amber unverified band and the neutral
+   range extensions. */
+.d1-hatch {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--hatch, var(--caution)) 0 1.5px,
+    transparent 1.5px 5px
+  );
+}
+
+/* --- Form ------------------------------------------------------------- */
+
+.d1-field {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--edge);
+  border-radius: 0;
+  padding: 0.875rem 1rem;
+  font-family: var(--fb);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  color: var(--ink);
+  transition:
+    border-color 160ms var(--ease-mech),
+    background-color 160ms var(--ease-mech);
+}
+
+.d1-field::placeholder {
+  color: var(--ink-3);
+}
+
+.d1-field:hover:not(:disabled) {
+  border-color: var(--ink-2);
+}
+
+.d1-field:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+.d1-field[aria-invalid="true"] {
+  border-color: var(--hot);
+  background: color-mix(in oklab, var(--hot) 7%, var(--bg));
+}
+
+.d1-field:disabled {
+  color: var(--ink-3);
+  cursor: not-allowed;
+}
+
+/* Native select arrow removed in favour of a drawn caret that matches the
+   hairline language. */
+.d1-select {
+  appearance: none;
+  padding-right: 2.5rem;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-2) 50%),
+    linear-gradient(135deg, var(--ink-2) 50%, transparent 50%);
+  background-position:
+    calc(100% - 1.25rem) 1.1rem,
+    calc(100% - 1rem) 1.1rem;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+/* Date input: force the native picker icon to a colour that survives on black. */
+.d1-field[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) opacity(0.5);
+  cursor: pointer;
+}
+.d1-field[type="date"]::-webkit-calendar-picker-indicator:hover {
+  filter: invert(1) opacity(0.9);
+}
+
+/* Segmented GPU-count control. The most important input on the site, so it is
+   the largest and the only one with a filled selected state. */
+.d1-seg {
+  position: relative;
+  display: block;
+  cursor: pointer;
+  border: 1px solid var(--edge);
+  background: var(--bg);
+  padding: 0.875rem 1rem;
+  transition:
+    border-color 160ms var(--ease-mech),
+    background-color 160ms var(--ease-mech),
+    color 160ms var(--ease-mech);
+}
+
+.d1-seg:hover {
+  border-color: var(--ink-2);
+  background: var(--surface);
+}
+
+.d1-seg:has(input:checked) {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 11%, var(--bg));
+  color: var(--ink);
+}
+
+.d1-seg:has(input:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.d1-seg input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* --- Buttons ---------------------------------------------------------- */
+
+.d1-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem 1.75rem;
+  font-family: var(--fm);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+  overflow: hidden;
+  transition:
+    background-color 200ms var(--ease-mech),
+    color 200ms var(--ease-mech),
+    box-shadow 200ms var(--ease-mech);
+}
+
+.d1-btn:hover:not(:disabled) {
+  background: transparent;
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.d1-btn:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.d1-btn-ghost {
+  border-color: var(--edge);
+  background: transparent;
+  color: var(--ink);
+}
+
+.d1-btn-ghost:hover:not(:disabled) {
+  border-color: var(--ink);
+  background: transparent;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+/* --- Links ------------------------------------------------------------ */
+
+/* Underline grows from the left on hover. Cheap, and it makes every source
+   citation feel deliberately clickable. */
+.d1-link {
+  position: relative;
+  color: var(--ink-2);
+  transition: color 160ms var(--ease-mech);
+}
+.d1-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 240ms var(--ease-out-expo);
+}
+.d1-link:hover {
+  color: var(--accent);
+}
+.d1-link:hover::after {
+  transform: scaleX(1);
+}
+
+/* --- Marquee ---------------------------------------------------------- */
+
+@keyframes d1-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.d1-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: d1-marquee 64s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .d1-marquee-track {
+    animation: none;
+    /* Still legible, just static — the strip becomes a header line. */
+    width: 100%;
+  }
+}

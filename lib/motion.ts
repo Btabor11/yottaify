@@ -1,0 +1,183 @@
+"use client";
+
+/**
+ * MOTION PRIMITIVES.
+ *
+ * `prefers-reduced-motion: reduce` is honoured absolutely: every helper here
+ * returns a no-op or an instant-final-state variant when reduced motion is on.
+ * The rule is that the reduced-motion render is a complete, finished page — not
+ * a degraded one. Nothing is revealed by animation only.
+ */
+
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+
+/** SSR-safe layout effect. */
+export const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
+
+export function prefersReducedMotion(): boolean {
+  if (typeof window === "undefined" || !window.matchMedia) return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+/** Live-updating reduced-motion flag. Starts `false` on the server. */
+export function useReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    if (!window.matchMedia) return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReduced(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setReduced(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  return reduced;
+}
+
+/**
+ * How a direction's scroll should feel. Each direction passes its own, because
+ * scroll weight is as much a part of its point of view as its typeface:
+ * the instrument panel tracks tightly, the document has inertia.
+ */
+export interface ScrollFeel {
+  /** Seconds for a wheel impulse to resolve. Higher = heavier. */
+  duration?: number;
+  /** Wheel delta scaling. Below 1 makes the page feel weighty. */
+  wheelMultiplier?: number;
+  touchMultiplier?: number;
+}
+
+/**
+ * Lenis smooth scroll, scoped to a direction's layout.
+ *
+ * Skipped entirely under reduced motion — hijacking scroll is exactly what
+ * that preference is asking us not to do. Also syncs Lenis to GSAP's ticker
+ * so ScrollTrigger and Lenis do not fight over the frame.
+ */
+export function useLenis(enabled = true, feel: ScrollFeel = {}): void {
+  const reduced = useReducedMotion();
+  const { duration = 1.05, wheelMultiplier = 1, touchMultiplier = 1.6 } = feel;
+
+  useEffect(() => {
+    if (!enabled || reduced) return;
+
+    let destroyed = false;
+    let cleanup: (() => void) | undefined;
+
+    void (async () => {
+      const [{ default: Lenis }, { gsap }, { ScrollTrigger }] = await Promise.all([
+        import("lenis"),
+        import("gsap"),
+        import("gsap/ScrollTrigger"),
+      ]);
+      if (destroyed) return;
+
+      gsap.registerPlugin(ScrollTrigger);
+
+      const lenis = new Lenis({
+        duration,
+        // Gentle exponential ease-out. Long tail, no rubber-band overshoot.
+        easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        smoothWheel: true,
+        wheelMultiplier,
+        touchMultiplier,
+      });
+
+      lenis.on("scroll", ScrollTrigger.update);
+
+      const tick = (time: number) => lenis.raf(time * 1000);
+      gsap.ticker.add(tick);
+      gsap.ticker.lagSmoothing(0);
+
+      cleanup = () => {
+        gsap.ticker.remove(tick);
+        lenis.destroy();
+      };
+    })();
+
+    return () => {
+      destroyed = true;
+      cleanup?.();
+    };
+  }, [enabled, reduced, duration, wheelMultiplier, touchMultiplier]);
+}
+
+/**
+ * True once the element has entered the viewport. Used to mount 3D scenes and
+ * start canvas loops only when visible, and to stop them when they are not.
+ */
+export function useInView<T extends Element>(
+  options: { rootMargin?: string; threshold?: number; once?: boolean } = {},
+): [React.RefObject<T | null>, boolean] {
+  const { rootMargin = "200px", threshold = 0, once = false } = options;
+  const ref = useRef<T | null>(null);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setInView(true);
+      return;
+    }
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        setInView(entry.isIntersecting);
+        if (entry.isIntersecting && once) io.disconnect();
+      },
+      { rootMargin, threshold },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [rootMargin, threshold, once]);
+
+  return [ref, inView];
+}
+
+/** WebGL availability, resolved once. Drives 3D fallbacks. */
+export function useWebGLSupported(): boolean | null {
+  const [supported, setSupported] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    try {
+      const canvas = document.createElement("canvas");
+      const gl = canvas.getContext("webgl2") ?? canvas.getContext("webgl");
+      setSupported(Boolean(gl));
+      // Release the context immediately; we only wanted the answer.
+      (gl as WebGLRenderingContext | null)?.getExtension("WEBGL_lose_context")?.loseContext();
+    } catch {
+      setSupported(false);
+    }
+  }, []);
+
+  return supported;
+}
+
+/** Shared easing vocabulary, so timing feels like one hand made it. */
+export const EASE = {
+  /** Default for entrances. Fast out of the gate, long settle. */
+  out: [0.16, 1, 0.3, 1] as const,
+  /** Symmetric, for state changes and layout shifts. */
+  inOut: [0.65, 0.05, 0.36, 1] as const,
+  /** Mechanical. Slight anticipation, no bounce. For the "engineered" feel. */
+  mech: [0.5, 0, 0.1, 1] as const,
+  /** GSAP string equivalents. */
+  gsapOut: "expo.out",
+  gsapInOut: "power3.inOut",
+  gsapMech: "power4.out",
+} as const;
+
+export const DUR = {
+  micro: 0.18,
+  fast: 0.32,
+  base: 0.6,
+  slow: 0.9,
+  reveal: 1.2,
+} as const;
+
+/** Stagger helper: index → delay, capped so long lists never crawl. */
+export function stagger(index: number, step = 0.06, cap = 0.6): number {
+  return Math.min(index * step, cap);
+}
