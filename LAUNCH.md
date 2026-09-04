@@ -14,6 +14,8 @@ need real values.
 | 3 | Placeholder email addresses | `config/site.ts` → `email.sales`, `email.general` | `reservations@example.com` / `hello@example.com`. The reservation form's confirmation copy points at these. |
 | 4 | Reservation endpoint unset | `.env` → `NEXT_PUBLIC_RESERVATION_ENDPOINT` | Unset falls back to a local stub that logs and resolves success. **A visitor would get a success message and you would never receive the lead.** Highest-consequence item on this list. |
 | 5 | Site URL unset | `.env` → `NEXT_PUBLIC_SITE_URL` | Falls back to `https://${domain}` — i.e. example.com. |
+| 5a | IP hash salt unset | `.env` → `IP_HASH_SALT` | `lib/server/reference.ts` falls back to `"dev-salt-not-for-production"`. With a known salt the "one-way" hash is brute-forceable over the IPv4 space, which makes the privacy policy's "we cannot recover the address" untrue. Generate 32+ random bytes. |
+| 5b | Privacy policy describes a fraction of what is collected | `content/legal.ts` | Live policy says "only what you type" and "page views and a single event"; the schema has 70 columns including geo, fingerprint-grade device facts, behaviour, and a follow-up with phone and compliance data. Drop-in replacement generated from the schema is in `content/data-inventory.ts` — see RESEARCH-2026-09-04.md §1. Set `RETENTION` before adopting. |
 
 ## Should fix before launch
 
