@@ -9,7 +9,9 @@
  * poster scale because a six-figure number is the thing the reader came for.
  */
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { trackEstimator } from "@/lib/analytics";
+import { track as journey } from "@/lib/journey";
 import {
   ESTIMATOR,
   FLEET,
@@ -35,6 +37,22 @@ export function LoadCalc() {
 
   const { rows, ours } = estimate(gpus, hours);
   const max = Math.max(...rows.map((r) => r.high ?? r.low)) || 1;
+
+  // Record what the visitor priced, debounced so a drag across sixteen cells
+  // lands once. The last values ride along with the reservation, so the
+  // person reading the lead knows the job the visitor had in mind.
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    const t = setTimeout(() => {
+      journey.estimator(gpus, hours);
+      trackEstimator(gpus, hours);
+    }, 800);
+    return () => clearTimeout(t);
+  }, [gpus, hours]);
 
   return (
     <section aria-labelledby="calc-heading" className="d3-panel d3-ticks">
@@ -153,7 +171,7 @@ export function LoadCalc() {
             </p>
             <p
               className="d3-display mt-2 text-[clamp(2rem,4.5vw,3rem)] leading-none text-[var(--accent)]"
-              style={{ ["--wdth" as string]: 106 }}
+              style={{ ["--wght" as string]: 800 }}
               aria-live="polite"
             >
               {usd(ours.low)}

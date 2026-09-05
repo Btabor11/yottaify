@@ -1,9 +1,11 @@
 import type { ReactNode } from "react";
+import { SITE } from "@/config/site";
+import { TITLEBLOCK, formatAsOfShort } from "@/content";
 
 /**
- * Section opener. Every section on this page is a "bay" on the bus: a number
- * tapped off the conductor in the left column, and the heading in the main
- * one. Identical structure each time, so the page reads as one circuit.
+ * Sheet header. Every paper section opens with a drawing title block — sheet
+ * number, title, check date, scale — and then the heading at poster weight.
+ * Identical structure each time, so the paperwork reads as one document.
  */
 export function Bay({
   index,
@@ -21,33 +23,49 @@ export function Bay({
   headingId?: string;
 }) {
   return (
-    <header className="d3-bus pb-10 md:pb-14">
-      <div>
-        <p
-          className="d3-figure text-[2.5rem] leading-none text-[var(--ink-3)]"
-          data-r
-          data-r-y="10"
-        >
-          {index}
-        </p>
-        <p className="d3-tag mt-2 text-[0.5625rem] text-[var(--accent)]">{eyebrow}</p>
-      </div>
+    <header className="pb-10 md:pb-14">
+      <dl className="d3-titleblock" data-r>
+        <div>
+          <dt className="d3-tag text-[0.5rem] text-[var(--ink-3)]">{TITLEBLOCK.sheet}</dt>
+          <dd className="d3-figure mt-1 text-[1rem] leading-[1.15] text-[var(--ink)] md:text-[1.125rem] md:leading-none">
+            {index}
+            <span className="d3-tag ml-2 text-[0.5rem] text-[var(--ink-3)]">
+              {TITLEBLOCK.of} {String(TITLEBLOCK.total).padStart(2, "0")}
+            </span>
+          </dd>
+        </div>
+        <div>
+          <dt className="d3-tag text-[0.5rem] text-[var(--ink-3)]">{TITLEBLOCK.title}</dt>
+          <dd className="d3-display mt-1 text-[1rem] leading-[1.05] text-[var(--accent)] md:text-[1.125rem] md:leading-none" style={{ ["--wght" as string]: 700 }}>
+            {eyebrow}
+          </dd>
+        </div>
+        <div>
+          <dt className="d3-tag text-[0.5rem] text-[var(--ink-3)]">{TITLEBLOCK.checked}</dt>
+          <dd className="d3-figure mt-1 text-[1rem] leading-[1.15] text-[var(--ink)] md:text-[1.125rem] md:leading-none">
+            {formatAsOfShort(SITE.pricingAsOf)}
+          </dd>
+        </div>
+        <div>
+          <dt className="d3-tag text-[0.5rem] text-[var(--ink-3)]">{TITLEBLOCK.scale}</dt>
+          <dd className="d3-figure mt-1 text-[1rem] leading-[1.15] text-[var(--ink-2)] md:text-[1.125rem] md:leading-none">
+            {TITLEBLOCK.scaleValue}
+          </dd>
+        </div>
+      </dl>
 
-      <div className="grid gap-x-12 gap-y-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:items-end">
+      <div className="mt-9 grid gap-x-12 gap-y-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:items-end">
         <h2
           id={headingId}
-          className="d3-display max-w-[18ch] text-[clamp(1.875rem,5.2vw,4.25rem)] text-balance"
+          className="d3-display max-w-[7.7em] text-[clamp(2.5rem,7.2vw,6.25rem)] text-balance"
           data-load
-          data-load-from="72"
+          data-load-from="300"
         >
           {heading}
         </h2>
         <div className="flex flex-col gap-5">
           {standfirst && (
-            <p
-              className="d3-body max-w-[46ch] text-[0.9375rem] text-[var(--ink-2)] text-pretty"
-              data-r
-            >
+            <p className="d3-body max-w-[46ch] text-[0.9375rem] text-[var(--ink-2)] text-pretty" data-r>
               {standfirst}
             </p>
           )}

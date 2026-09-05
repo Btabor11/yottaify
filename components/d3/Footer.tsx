@@ -3,33 +3,43 @@ import { SITE } from "@/config/site";
 import { FOOTER, FORM_COPY, FLEET, RATE, resolveFooterHref } from "@/content";
 import { D3Logo } from "./Chrome";
 
+/**
+ * Back to the dark. The paper ends, the yard returns, and the closing call is
+ * the tagline at the largest size it appears — the promise, in the voice, set
+ * against the fact in the stencil.
+ */
 export function D3Footer({ reserveHref = "#reserve" }: { reserveHref?: string }) {
+  const [fact, ...rest] = SITE.tagline.split(" in ");
+  const promise = rest.length ? `in ${rest.join(" in ")}` : "";
   return (
-    <footer className="border-t border-[var(--rule-strong)] bg-[var(--bg)]">
-      {/* Closing call. A reader at the bottom is the one most likely to act. */}
+    <footer className="relative border-t border-[var(--rule-strong)] bg-[var(--bg)]">
       <div className="relative overflow-hidden border-b border-[var(--rule)]">
         <div
           aria-hidden
           className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(90% 140% at 15% 130%, color-mix(in oklab, var(--accent) 20%, transparent), transparent 60%)",
+              "radial-gradient(90% 140% at 15% 130%, color-mix(in oklab, var(--live) 18%, transparent), transparent 60%)",
           }}
         />
-        <div className="d3-shell relative flex flex-wrap items-end justify-between gap-x-10 gap-y-8 py-14 md:py-20">
+        <div aria-hidden className="d3-grid d3-fade-down absolute inset-0 opacity-50" />
+        <div className="d3-shell relative flex flex-wrap items-end justify-between gap-x-10 gap-y-10 py-16 md:gap-y-8 md:py-24">
           <div>
             <p className="d3-tag text-[var(--ink-3)]">
               {FLEET.total} GPUs · {RATE.full} · {SITE.availability}
             </p>
-            <p
-              className="d3-display mt-4 max-w-[16ch] text-[clamp(2rem,7vw,5.5rem)] text-balance"
-              data-load
-              data-load-from="68"
-            >
-              {SITE.tagline}
+            <p className="mt-6 md:mt-5">
+              <span className="d3-display block max-w-[5.8em] text-[clamp(2.75rem,9vw,8rem)] text-balance" data-load data-load-from="300">
+                {fact}
+              </span>
+              {promise && (
+                <span className="d3-voice block max-w-[16ch] text-[clamp(2.5rem,8vw,7rem)] text-[var(--live)]" data-r>
+                  {promise}
+                </span>
+              )}
             </p>
           </div>
-          <a href={reserveHref} className="d3-btn">
+          <a href={reserveHref} className="d3-btn w-full sm:w-auto">
             {FORM_COPY.eyebrow}
             <span aria-hidden>→</span>
           </a>
@@ -40,10 +50,7 @@ export function D3Footer({ reserveHref = "#reserve" }: { reserveHref?: string })
         <div>
           <D3Logo />
           <p className="d3-tag mt-4 text-[0.5rem] text-[var(--ink-3)]">{FOOTER.wordmarkNote}</p>
-          <a
-            href={`mailto:${SITE.email.general}`}
-            className="d3-body d3-link mt-4 inline-block text-[0.8125rem]"
-          >
+          <a href={`mailto:${SITE.email.general}`} className="d3-body d3-link mt-4 inline-block text-[0.8125rem]">
             {SITE.email.general}
           </a>
         </div>

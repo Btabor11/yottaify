@@ -1,21 +1,25 @@
 /* ---------------------------------------------------------------------------
-   D3 — "SUBSTATION"
+   D3 — "SWITCHYARD"
 
-   The conceit: sixteen GPUs is not a cloud, it is a load. This direction reads
-   the whole business as an electrical system — a one-line diagram, a bus, a
-   feeder, 35 kW at the meter — and behaves like the control room in front of
-   it. Saturated, energised, and unapologetically a screen.
+   The conceit: this company is a length of copper between a utility pole in
+   the Ozarks and sixteen dies. The page is that length of copper, walked from
+   one end to the other. The first half is the machine — dark, energised, a
+   particle field that reforms itself from ridgeline to meter to bus to node to
+   die as you scroll. The second half is the paperwork — a datasheet on warm
+   paper, where every figure carries its source and the date it was read. The
+   moment the lights come on is the moment the argument stops being felt and
+   starts being checked, and the site is built so that both halves are true.
 
-   The reason this direction exists: D1 argues by instrumentation and D2 argues
-   by evidence. D3 argues by force. It is aimed at the founder who has to feel
-   that the thing on the other end is real and powered before they will read a
-   table, and its job is to make sixteen GPUs feel like a substation rather
-   than a rounding error.
+   Two grounds, one token vocabulary. `.d3` binds the dark set. `.d3-paper`,
+   applied to a section, rebinds every semantic token to the paper set, so a
+   component styled with `bg-surface text-ink border-rule` is correct on both
+   without knowing which one it is standing on.
 
-   Colour is the one thing here that genuinely moves. `--phase` is driven by
-   scroll progress and interpolates the live accent from volt-cyan through
-   plasma-violet, so the page changes temperature as you descend it. Under
-   reduced motion --phase is frozen and every gradient resolves to one colour.
+   Colour travels once: `--phase` is written from scroll progress, and `--live`
+   is the mix of the two poles — ember, the colour of a conductor under load,
+   and hbm, the colour the story cools to once the current reaches memory. The
+   accent used for controls does not travel; a button must not change colour
+   under someone's hand. Under reduced motion `--phase` is frozen.
 --------------------------------------------------------------------------- */
 
 @property --phase {
@@ -25,48 +29,53 @@
 }
 
 .d3 {
-  /* Substrate. Blue-black rather than neutral — the room is lit by equipment. */
-  --bg: #05060b;
-  --surface: #0b0d17;
-  --surface-2: #121527;
-  /* Checked against every ground these can land on, including --row-ours,
-     the accent-tinted row in the rate table, which is lighter than
-     --surface-2 at the cold end of the accent travel:
-     ink 16.4:1 · ink-2 8.3:1 · ink-3 4.63:1, all worst case. */
-  --ink: #f2f4ff;
-  --ink-2: #a9b0cf;
-  --ink-3: #7b83a3;
-  --rule: #1b1f35;
-  --rule-strong: #2b3150;
-  /* Interactive borders need 3:1 against the surface they sit on. The binding
-     case is --row-ours, the accent-tinted table row: 3.06:1. */
-  --edge: #5e658d;
+  /* Substrate. Warm near-black: a yard lit by sodium, not a screen lit by blue. */
+  --bg: #0b0a09;
+  --surface: #13110e;
+  --surface-2: #1b1815;
+  /* Inks, checked against every ground they land on including --row-ours,
+     the accent-tinted table row. Worst case: ink 15.3:1 · ink-2 7.7:1 ·
+     ink-3 4.61:1. */
+  --ink: #f3eee4;
+  --ink-2: #b3aa9c;
+  --ink-3: #8a8175;
+  --rule: #221e1a;
+  --rule-strong: #342e28;
+  /* Interactive borders need 3:1 against the surface they sit on. Binding
+     case is --surface-2: 3.01:1. */
+  --edge: #6d6357;
   /* Resolved value of the .d3-row-ours tint at --phase 0. Not applied
      directly — it exists so scripts/audit.mjs has a ground to check. */
-  --row-ours: #0e1c27;
+  --row-ours: #1f1610;
 
-  /* The two poles the live accent travels between. */
-  --volt: #35e8ff;
-  --plasma: #a06bff;
-  /* Sodium, for anything provisional. */
-  --caution: #ffb545;
-  /* Signal red is reserved for errors only — nothing decorative uses it. */
-  --alarm: #ff6b6b;
+  /* The two poles the live colour travels between. */
+  --ember: #ff8a4c;
+  --hbm: #6fe3d2;
+  /* Sodium yellow, for anything provisional or unverified. */
+  --caution: #f2c14e;
+  /* Reserved for errors. Nothing decorative uses it. */
+  --alarm: #ff7b6b;
 
-  /* Live accent. Interpolated in oklch so the midpoint stays saturated instead
-     of dipping through grey the way an sRGB mix would. */
-  --accent: color-mix(in oklch, var(--volt), var(--plasma) calc(var(--phase) * 100%));
-  --accent-ink: #05060b;
-  --accent-2: var(--volt);
-  --focus: var(--volt);
-  --hot: var(--plasma);
+  /* Live colour: interpolated in oklch the long way round the hue wheel, so
+     the travel from ember to hbm runs through rose and violet rather than
+     through lime. Lightness stays high the whole way (every stop clears
+     4.5:1 on the dark grounds — scripts/audit.mjs samples the ramp).
+     components/d3/story/ramp.ts is the same curve for the canvas. */
+  --live: color-mix(in oklch longer hue, var(--ember), var(--hbm) calc(var(--phase) * 100%));
+  /* The control colour. Fixed. */
+  --accent: var(--ember);
+  --accent-ink: #0b0a09;
+  --accent-2: var(--hbm);
+  --focus: var(--hbm);
+  --hot: var(--ember);
 
   --fd: var(--d3-display);
+  --fv: var(--d3-voice);
   --fb: var(--d3-sans);
   --fm: var(--d3-mono);
 
-  /* Coarser grain than D1, screen-blended: this is emission, not film stock. */
-  --grain-opacity: 0.042;
+  /* Grain: emission, not film stock. */
+  --grain-opacity: 0.05;
   --grain-blend: screen;
   --grain-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
 
@@ -74,6 +83,44 @@
   color: var(--ink);
   font-family: var(--fb);
   color-scheme: dark;
+}
+
+/* ---------------------------------------------------------------------------
+   PAPER. The evidence half of the page. Same names, rebound.
+
+   Contrast, measured against --bg, --surface, --surface-2 and --row-ours:
+   ink 13.9:1 · ink-2 7.4:1 · ink-3 4.94:1 · accent 5.23:1 · hbm 5.52:1 ·
+   caution 5.49:1 · alarm 5.44:1 · edge 3.05:1, all worst case.
+--------------------------------------------------------------------------- */
+.d3-paper {
+  --bg: #f1ebe0;
+  --surface: #f8f4ec;
+  --surface-2: #e6dfd0;
+  --ink: #171310;
+  --ink-2: #4a423a;
+  --ink-3: #655c52;
+  --rule: #d9d1c2;
+  --rule-strong: #bdb3a2;
+  --edge: #7f7567;
+  --row-ours: #f3dccb;
+
+  --ember: #9c3a0c;
+  --hbm: #0f6157;
+  --caution: #6f5200;
+  --alarm: #a7241c;
+
+  --accent: var(--ember);
+  --accent-ink: #f8f4ec;
+  --accent-2: var(--hbm);
+  --focus: var(--hbm);
+  --hot: var(--ember);
+
+  --grain-opacity: 0.35;
+  --grain-blend: multiply;
+
+  background: var(--bg);
+  color: var(--ink);
+  color-scheme: light;
 }
 
 /* Freeze the colour travel for anyone who asked for less motion. Mid-scale, so
@@ -86,91 +133,732 @@
 
 /* --- Type roles -------------------------------------------------------- */
 
-/* Display. The width axis is a variable, so a component can drive it from
-   scroll, hover, or state without touching font-size or layout. */
+/* Display. Condensed, and set by weight: `--wght` is the one axis the
+   choreography drives, so a headline can be charged from a hairline without
+   touching its size or its measure. */
 .d3-display {
   font-family: var(--fd);
   font-weight: 700;
-  font-variation-settings: "wdth" var(--wdth, 100);
-  line-height: 0.86;
-  letter-spacing: -0.035em;
+  font-variation-settings: "wght" var(--wght, 760);
+  line-height: 0.9;
+  letter-spacing: 0.005em;
   text-transform: uppercase;
 }
 
-/* Wide, light setting for standfirsts that need to feel like signage. */
-.d3-wide {
-  font-family: var(--fd);
-  font-weight: 500;
-  font-variation-settings: "wdth" var(--wdth, 125);
+/* The voice. One italic clause inside a stencilled headline, or a paragraph
+   that speaks in the first person. Never uppercase, never tracked. */
+.d3-voice {
+  font-family: var(--fv);
+  font-style: italic;
+  font-weight: 400;
+  text-transform: none;
   letter-spacing: -0.01em;
-  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* The voice set as running text — a paragraph rather than a clause inside a
+   headline — reads on a narrow measure, where a line-height of 1 makes the
+   italic ascenders and descenders collide. On a phone it gets air; a sub-head
+   set small in the display face gets the same relief. Desktop is unchanged. */
+@media (max-width: 48rem) {
+  p.d3-voice {
+    line-height: 1.32;
+  }
+  .d3-display.d3-subhead {
+    line-height: 1.02;
+  }
 }
 
 .d3-body {
   font-family: var(--fb);
   font-weight: 400;
-  line-height: 1.58;
-  letter-spacing: -0.004em;
+  line-height: 1.6;
+  letter-spacing: 0;
+  font-variation-settings: "wdth" var(--wdth, 100);
 }
 
-/* Telemetry label. Every piece of chrome on this page is one of these. */
+/* Telemetry label. Title blocks, axis labels, every small caption. */
 .d3-tag {
   font-family: var(--fm);
-  font-size: 0.6875rem;
+  font-size: 0.625rem;
   font-weight: 500;
-  letter-spacing: 0.16em;
+  font-variation-settings: "wdth" 87.5;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
 .d3-figure {
   font-family: var(--fm);
+  font-weight: 500;
+  font-variation-settings: "wdth" var(--wdth, 100);
   font-variant-numeric: tabular-nums lining-nums;
   font-feature-settings: "tnum" 1, "lnum" 1;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
 }
 
 /* --- Structure --------------------------------------------------------- */
 
 .d3-shell {
   width: 100%;
-  max-width: 90rem;
+  max-width: 96rem;
   margin-inline: auto;
-  padding-inline: clamp(1.25rem, 4vw, 4rem);
+  padding-inline: clamp(1.25rem, 4vw, 4.5rem);
 }
 
-/* The bus: a vertical conductor running down the left of every section, with
-   the section number sitting on it like a tap. It is the device that makes the
-   page read as one circuit rather than a stack of blocks. */
-.d3-bus {
-  display: grid;
-  /* minmax(0, 1fr), not 1fr: an auto-minimum track is sized to its content's
-     minimum, so one wide figure inside it drags the whole page sideways on a
-     phone instead of being asked to shrink. */
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1.5rem;
+/* The story: one stage that stays put, and chapters that walk over it.
+   Pure CSS — the stage is sticky and pulled back under the chapters with a
+   negative margin, so the layout is identical with JavaScript off. All the
+   canvas does is paint into the stage. */
+.d3-story {
+  position: relative;
+  isolation: isolate;
 }
-@media (min-width: 1024px) {
-  .d3-bus {
-    grid-template-columns: 5.5rem minmax(0, 1fr);
-    gap: 0 2.5rem;
+.d3-stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  margin-bottom: -100svh;
+  z-index: 0;
+  overflow: hidden;
+}
+.d3-stage-scrim {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 62%;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    var(--bg) 0%,
+    color-mix(in oklab, var(--bg) 92%, transparent) 30%,
+    color-mix(in oklab, var(--bg) 55%, transparent) 62%,
+    transparent 100%
+  );
+  /* Portrait screens give the text most of the height, and the chapter copy
+     sits higher up the stage, so the scrim holds its ground for longer before
+     it lets the field through. The particles still own the top of the frame. */
+  @media (max-width: 48rem) {
+    height: 90%;
+    background: linear-gradient(
+      to top,
+      var(--bg) 0%,
+      color-mix(in oklab, var(--bg) 94%, transparent) 42%,
+      color-mix(in oklab, var(--bg) 72%, transparent) 68%,
+      color-mix(in oklab, var(--bg) 30%, transparent) 86%,
+      transparent 100%
+    );
   }
-  .d3-bus > :first-child {
+}
+
+/* --- Stage index ----------------------------------------------------------
+   The instrument strip on the right edge of the stage. Server-rendered at its
+   resting state; the client moves `data-active` and the phase figure. Only on
+   wide screens, where the chapter text does not need the right column. */
+.d3-stageindex {
+  display: none;
+  position: absolute;
+  right: clamp(1.25rem, 3vw, 3rem);
+  top: 50%;
+  translate: 0 -50%;
+  z-index: 2;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1.25rem;
+  @media (min-width: 64rem) {
+    display: flex;
+  }
+}
+.d3-stageindex-phase {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  font-size: 0.5625rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--rule-strong);
+  min-width: 7.5rem;
+  justify-content: space-between;
+}
+.d3-stageindex-phase .d3-figure {
+  font-size: 0.75rem;
+}
+.d3-stageindex-stops {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.d3-stageindex-link {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 0.2rem 0;
+  color: var(--ink-3);
+  text-decoration: none;
+  pointer-events: auto;
+}
+.d3-stageindex-label {
+  display: flex;
+  gap: 0.6rem;
+  font-size: 0.5rem;
+  opacity: 0.55;
+  transition: opacity 320ms var(--ease-out-expo), color 320ms var(--ease-out-expo);
+}
+.d3-stageindex-shape {
+  color: var(--ink-2);
+  min-width: 3.4em;
+  text-align: right;
+}
+.d3-stageindex-tick {
+  display: block;
+  width: 0.75rem;
+  height: 1px;
+  background: var(--ink-3);
+  transform-origin: right center;
+  transition: transform 420ms var(--ease-out-expo), background-color 320ms var(--ease-out-expo);
+}
+.d3-stageindex-link:hover .d3-stageindex-label,
+.d3-stageindex-link:focus-visible .d3-stageindex-label {
+  opacity: 1;
+}
+/* The active stop: figure in the live colour, tick drawn long. Generated for
+   each of the seven stops so it costs no JS beyond one attribute write. */
+.d3-stageindex[data-active="0"] [data-i="0"],
+.d3-stageindex[data-active="1"] [data-i="1"],
+.d3-stageindex[data-active="2"] [data-i="2"],
+.d3-stageindex[data-active="3"] [data-i="3"],
+.d3-stageindex[data-active="4"] [data-i="4"],
+.d3-stageindex[data-active="5"] [data-i="5"],
+.d3-stageindex[data-active="6"] [data-i="6"] {
+  & .d3-stageindex-label {
+    opacity: 1;
+  }
+  & .d3-stageindex-fig {
+    color: var(--live);
+  }
+  & .d3-stageindex-shape {
+    color: var(--ink);
+  }
+  & .d3-stageindex-tick {
+    background: var(--live);
+    transform: scaleX(2.6);
+  }
+}
+
+.d3-chapter {
+  position: relative;
+  z-index: 1;
+  min-height: 100svh;
+  display: grid;
+  align-content: end;
+  padding-bottom: clamp(3rem, 9vh, 6rem);
+}
+.d3-chapter[data-align="start"] {
+  align-content: start;
+  padding-top: clamp(7rem, 18vh, 12rem);
+}
+/* Chapter zero is taller than a viewport on most screens, so it needs room
+   under the fixed header rather than relying on end-alignment. */
+.d3-chapter[data-chapter="00"] {
+  padding-top: 5.5rem;
+  padding-bottom: 2rem;
+  /* On a phone the hero runs longer than the screen, so it is read as a
+     column rather than a frame; give it air under the chrome and before
+     the first chapter takes over. */
+  @media (max-width: 48rem) {
+    padding-top: 7rem;
+    padding-bottom: 3.5rem;
+  }
+}
+.d3-chapter[data-align="center"] {
+  align-content: center;
+  padding-block: 0;
+}
+/* On a phone the chapter copy travels through the dense part of the field
+   as it scrolls, where the stage scrim is thinnest. Each chapter carries a
+   soft local ground that fades in above the eyebrow, so the mono tag and
+   the hairline heading stay legible at every scroll position while the
+   particles still own the frame around the text. */
+@media (max-width: 48rem) {
+  .d3-chapter:not([data-chapter="00"]) > .d3-shell {
     position: relative;
+    isolation: isolate;
   }
-  .d3-bus > :first-child::after {
+  .d3-chapter:not([data-chapter="00"]) > .d3-shell::before {
     content: "";
     position: absolute;
-    top: 3.5rem;
-    bottom: -1rem;
-    left: 0.5rem;
-    width: 1px;
+    z-index: -1;
+    inset: -7rem 0 -3rem 0;
+    pointer-events: none;
     background: linear-gradient(
       to bottom,
-      var(--rule-strong),
-      color-mix(in oklab, var(--accent) 35%, transparent) 40%,
-      transparent
+      transparent 0%,
+      color-mix(in oklab, var(--bg) 62%, transparent) 26%,
+      color-mix(in oklab, var(--bg) 84%, transparent) 48%,
+      color-mix(in oklab, var(--bg) 84%, transparent) 100%
     );
+  }
+}
+
+/* --- The hero: the device, then the copy ------------------------------------
+   An exploded module with its parts labelled, closed by the scroll, lit, and
+   given to the particle field; then the headline. Two modes, one markup:
+
+   · Static (no JS, reduced motion, or the script has not run): the frame is a
+     figure in normal flow — exploded still, labels, title — and the copy
+     follows. Complete, and nothing is hidden.
+   · Live (`[data-live]`, set by HeroSequence): the pin block grows to several
+     viewports, the frame sticks, and `--hp` — 0 at the top of the page, 1 as
+     the frame unpins — drives every beat below as a pure function of scroll.
+     The canvas scrubs the frames; the CSS does the rest.
+
+   Every `--hp` expression rests at its beat-one value when `--hp` is 0, so the
+   base state is the exploded view with everything on. Beats are declared once
+   in components/d3/hero/sequence.ts; the numbers here mirror them. */
+@property --hp {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+@property --i {
+  syntax: "<integer>";
+  inherits: false;
+  initial-value: 0;
+}
+
+.d3-hero {
+  position: relative;
+  z-index: 1;
+}
+/* The frame is a full viewport in both modes, laid out identically, so the
+   moment the script arrives and pins it nothing on screen moves. */
+.d3-hero-frame {
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  align-content: stretch;
+  padding-top: 6rem;
+  padding-bottom: 2rem;
+  /* The glow and the leaders are authored to bleed past this frame and be
+     cut by it. The pinned variant below clips them with `overflow: hidden`,
+     but that variant only exists once the script pins the hero — so without
+     it, and under reduced motion, the glow escaped and the page scrolled
+     sideways. `clip` rather than `hidden`: no scroll container, so nothing
+     inside can become independently scrollable. */
+  overflow: clip;
+  @media (max-width: 48rem) {
+    padding-top: 6.5rem;
+  }
+}
+.d3-hero[data-live] .d3-hero-pin {
+  /* One viewport of frame, then PIN_TRAVEL_VH viewports of pinned travel. */
+  height: calc(100svh * 3.4);
+}
+.d3-hero[data-live] .d3-hero-frame {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+}
+
+/* The product-shot ground. Opaque over the stage until the module ignites,
+   then lifted so the field shows through. */
+.d3-hero-ground {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(90% 70% at 62% 48%, color-mix(in oklab, var(--surface) 70%, var(--bg)), transparent 70%),
+    var(--bg);
+  opacity: calc(1 - clamp(0, (var(--hp) - 0.62) / 0.14, 1));
+}
+.d3-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-areas: "eyebrow" "titles" "figure" "foot";
+  gap: 1.25rem 3rem;
+  height: 100%;
+  min-height: 0;
+  @media (min-width: 64rem) {
+    grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "eyebrow eyebrow"
+      "titles  figure"
+      "foot    figure";
+    align-items: center;
+    gap: 1.5rem 3rem;
+  }
+}
+/* The frame's own furniture goes with the title, so the frame is empty but
+   for the field by the time it unpins and the copy comes up under it. */
+.d3-hero-eyebrow,
+.d3-hero-caption {
+  --kx: clamp(0, (var(--hp) - 0.86) / 0.1, 1);
+  opacity: calc(1 - var(--kx));
+}
+.d3-hero-eyebrow {
+  grid-area: eyebrow;
+}
+.d3-hero-titles {
+  grid-area: titles;
+  position: relative;
+  align-self: center;
+}
+.d3-hero-figure {
+  grid-area: figure;
+  margin: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1rem;
+}
+.d3-hero-foot {
+  grid-area: foot;
+  align-self: end;
+}
+
+/* Title beats. Both share one slot; the second is stacked over the first so
+   the swap is a change of weight and light, not of layout. */
+/* One word a line, locked (.d3-line), so the travelling weight can thin the
+   letters without ever re-wrapping the block under the figure. */
+.d3-hero-title {
+  font-size: clamp(3.5rem, 15vw, 8.25rem);
+  margin: 0;
+  @media (min-width: 64rem) {
+    font-size: clamp(3rem, 9vw, 8.25rem);
+  }
+}
+.d3-hero-title-apart {
+  --k: clamp(0, (var(--hp) - 0.14) / 0.14, 1);
+  --wght: calc(760 - var(--k) * 560);
+  opacity: calc(1 - var(--k));
+  transform: translateY(calc(var(--k) * -0.22em));
+}
+.d3-hero-title-load {
+  --kin: clamp(0, (var(--hp) - 0.52) / 0.14, 1);
+  --kout: clamp(0, (var(--hp) - 0.84) / 0.1, 1);
+  --wght: calc(180 + var(--kin) * 580);
+  position: absolute;
+  inset: 0 auto auto 0;
+  color: var(--live);
+  opacity: calc(var(--kin) * (1 - var(--kout)));
+  transform: translateY(calc((1 - var(--kin)) * 0.22em + var(--kout) * -0.22em));
+  display: none;
+}
+.d3-hero[data-live] .d3-hero-title-load {
+  display: block;
+}
+.d3-hero-lede {
+  --k: clamp(0, (var(--hp) - 0.1) / 0.12, 1);
+  margin-top: 1.5rem;
+  max-width: 34ch;
+  opacity: calc(1 - var(--k));
+  transform: translateY(calc(var(--k) * -0.5rem));
+}
+
+/* The picture box: every frame has the same aspect, so the box is reserved
+   before a byte of image arrives and nothing shifts when the canvas takes
+   over. Sized to the column, capped to the height the frame has left. */
+.d3-hero-device {
+  position: relative;
+  width: min(100%, calc((100svh - 19rem) * var(--ar, 1.79)));
+  aspect-ratio: var(--ar, 1.79);
+  margin-inline: auto;
+  --kd: clamp(0, (var(--hp) - 0.76) / 0.16, 1);
+  @media (max-width: 64rem) {
+    width: min(100%, calc((100svh - 27rem) * var(--ar, 1.79)));
+  }
+}
+.d3-hero-still,
+.d3-hero-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  opacity: calc(1 - var(--kd));
+  transform: scale(calc(1 + var(--kd) * 0.04));
+}
+.d3-hero-canvas {
+  display: none;
+  /* Read by the canvas for the glow wash, so the wash is the page's colour. */
+  color: var(--live);
+}
+.d3-hero[data-live] .d3-hero-canvas {
+  display: block;
+}
+.d3-hero[data-drawn] .d3-hero-still {
+  visibility: hidden;
+}
+/* The light under the module once it has closed. */
+.d3-hero-glow {
+  position: absolute;
+  inset: -30% -20%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(50% 45% at 50% 55%, color-mix(in oklab, var(--live) 34%, transparent), transparent 70%);
+  opacity: calc(clamp(0, (var(--hp) - 0.56) / 0.16, 1) * (1 - clamp(0, (var(--hp) - 0.84) / 0.1, 1)));
+}
+
+/* Callouts: a label in the margin, a leader to the part, a dot on it. Each
+   retracts into its part in turn as the module starts to close. Wide screens
+   only; below that the legend carries the same names. */
+.d3-hero-leaders {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  display: none;
+}
+.d3-hero-leaders path {
+  --k: clamp(0, (var(--hp) - (0.05 + var(--i) * 0.02)) / 0.12, 1);
+  fill: none;
+  stroke: var(--live);
+  stroke-opacity: 0.75;
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: var(--k);
+  animation: d3-hero-leader 900ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: calc(500ms + var(--i) * 70ms);
+}
+.d3-hero-dot,
+.d3-hero-callout {
+  display: none;
+}
+.d3-hero-dot {
+  --k: clamp(0, (var(--hp) - (0.05 + var(--i) * 0.02)) / 0.12, 1);
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1.5px var(--live), 0 0 10px -2px var(--live);
+  opacity: calc(1 - var(--k));
+  animation: d3-rise 600ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: calc(420ms + var(--i) * 70ms);
+}
+.d3-hero-callout {
+  --k: clamp(0, (var(--hp) - (0.05 + var(--i) * 0.02)) / 0.12, 1);
+  position: absolute;
+  width: 22%;
+  translate: 0 -50%;
+  line-height: 1.3;
+  opacity: calc(1 - var(--k));
+  animation: d3-hero-callout 800ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: calc(560ms + var(--i) * 70ms);
+}
+.d3-hero-callout[data-side="left"] {
+  left: 0;
+  text-align: right;
+  transform: translateX(calc(var(--k) * 0.75rem));
+}
+.d3-hero-callout[data-side="right"] {
+  right: 0;
+  text-align: left;
+  transform: translateX(calc(var(--k) * -0.75rem));
+}
+.d3-hero-callout .d3-tag {
+  display: block;
+  font-size: 0.5625rem;
+  color: var(--ink);
+}
+.d3-hero-callout-detail {
+  display: block;
+  margin-top: 0.2rem;
+  font-family: var(--fb);
+  font-size: 0.6875rem;
+  color: var(--ink-2);
+}
+/* Leader lines need a margin the two-column grid only has from 72rem up; in
+   the band below that the box fills its column and labels would collide, so
+   the legend carries the names instead. */
+@media (min-width: 72rem) {
+  .d3-hero-leaders,
+  .d3-hero-dot,
+  .d3-hero-callout {
+    display: block;
+  }
+}
+@keyframes d3-hero-leader {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+@keyframes d3-hero-callout {
+  from {
+    opacity: 0;
+  }
+}
+
+/* The legend: the same parts as a list, where there is no margin for labels. */
+.d3-hero-legend {
+  --k: clamp(0, (var(--hp) - 0.06) / 0.14, 1);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 1.25rem;
+  opacity: calc(1 - var(--k));
+  @media (min-width: 72rem) {
+    display: none;
+  }
+  @media (max-height: 44rem) and (max-width: 72rem) {
+    display: none;
+  }
+}
+.d3-hero-legend li {
+  display: grid;
+  grid-template-columns: 1.4rem minmax(0, 1fr);
+  column-gap: 0.4rem;
+  font-size: 0.5625rem;
+  color: var(--ink-3);
+}
+.d3-hero-legend li > .d3-hero-legend-part {
+  color: var(--ink);
+}
+.d3-hero-legend li > .d3-hero-callout-detail {
+  grid-column: 2;
+  margin-top: 0.05rem;
+  font-size: 0.6875rem;
+  color: var(--ink-2);
+}
+.d3-hero-caption {
+  margin: 0;
+  max-width: 44ch;
+  font-size: 0.5rem;
+  line-height: 1.5;
+  color: var(--ink-3);
+  @media (min-width: 64rem) {
+    text-align: right;
+    margin-inline-start: auto;
+  }
+}
+
+/* The nudge. A tick that walks down, gone as soon as the reader moves. Only
+   where the scroll does assemble something: in the static frame it would be
+   a promise the page cannot keep. */
+.d3-hero-hint {
+  --k: clamp(0, (var(--hp) - 0.02) / 0.04, 1);
+  display: none;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--ink-3);
+  opacity: calc(1 - var(--k));
+}
+.d3-hero[data-live] .d3-hero-hint {
+  display: inline-flex;
+}
+.d3-hero-hint-tick {
+  position: relative;
+  width: 1px;
+  height: 2rem;
+  background: var(--rule-strong);
+  overflow: hidden;
+}
+.d3-hero-hint-tick::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--live);
+  transform-origin: top;
+  animation: d3-hero-tick 1800ms cubic-bezier(0.65, 0.05, 0.36, 1) infinite;
+}
+@keyframes d3-hero-tick {
+  0% {
+    transform: translateY(-100%);
+  }
+  60%,
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+/* The copy. In flow after the frame; in live mode HeroSequence sets each
+   revealed block's offset inline and lets these transitions carry it home,
+   one after another, as the reader arrives. Nothing here rests at an offset. */
+.d3-hero-copy.d3-chapter[data-chapter="00"] {
+  align-content: start;
+}
+.d3-hero[data-live] [data-hp-reveal] {
+  transition:
+    opacity 900ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 900ms cubic-bezier(0.16, 1, 0.3, 1),
+    font-variation-settings 1300ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: calc(var(--i) * 110ms);
+}
+
+/* Chapter mark: a stencilled index on a rule, tapped off the left margin. */
+.d3-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.d3-mark::before {
+  content: "";
+  width: 2.25rem;
+  height: 1px;
+  background: var(--live);
+  box-shadow: 0 0 10px -2px var(--live);
+}
+
+/* Drawing title block. Every paper section opens with one, because a figure
+   that carries its drawing number, revision and check date is a figure that
+   can be argued with. */
+.d3-titleblock {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  border: 1px solid var(--rule-strong);
+  background: var(--surface);
+}
+.d3-titleblock > * {
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--rule);
+  min-width: 0;
+  /* Two-up on a phone: the cells are narrower, so they need to be taller. */
+  @media (max-width: 48rem) {
+    padding: 0.95rem 1rem 1rem;
+  }
+}
+.d3-titleblock > :last-child {
+  border-bottom: 0;
+}
+@media (min-width: 24rem) {
+  .d3-titleblock {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .d3-titleblock > * {
+    border-right: 1px solid var(--rule);
+  }
+  .d3-titleblock > :nth-child(2n) {
+    border-right: 0;
+  }
+  .d3-titleblock > :nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+}
+@media (min-width: 64rem) {
+  .d3-titleblock {
+    grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr));
+  }
+  .d3-titleblock > * {
+    border-bottom: 0;
+  }
+  .d3-titleblock > :last-child {
+    border-right: 0;
+  }
+  .d3-titleblock > :nth-child(2n) {
+    border-right: 1px solid var(--rule);
   }
 }
 
@@ -188,21 +876,20 @@
   background: linear-gradient(
     90deg,
     transparent,
-    color-mix(in oklab, var(--accent) 70%, transparent) 20%,
-    color-mix(in oklab, var(--accent) 70%, transparent) 80%,
+    color-mix(in oklab, var(--live) 75%, transparent) 18%,
+    color-mix(in oklab, var(--live) 75%, transparent) 82%,
     transparent
   );
 }
 
-/* Corner ticks. Cheap, and they do more for "engineered" than a border-radius
-   ever will. */
+/* Corner ticks: registration marks. */
 .d3-ticks::before,
 .d3-ticks::after {
   content: "";
   position: absolute;
-  width: 0.5rem;
-  height: 0.5rem;
-  border: 1px solid var(--accent);
+  width: 0.55rem;
+  height: 0.55rem;
+  border: 1px solid var(--live);
   pointer-events: none;
 }
 .d3-ticks::before {
@@ -218,26 +905,74 @@
   border-top: 0;
 }
 
-/* --- Energised surfaces ------------------------------------------------ */
+/* --- Surfaces ---------------------------------------------------------- */
 
-/* Scanline field, used behind hero and section transitions. Static gradient,
-   so it costs nothing and reads as CRT rather than as a loading state. */
+/* Ledger rule: the horizontal ruling of a paper form, tinted so it sits under
+   text rather than competing with it. */
+.d3-ledger {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 calc(1.6rem - 1px),
+    color-mix(in oklab, var(--ink) 7%, transparent) calc(1.6rem - 1px) 1.6rem
+  );
+}
+
+/* Measurement grid, tinted by the live colour so it drifts with the page. */
+.d3-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--live) 10%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--live) 10%, transparent) 1px, transparent 1px);
+  background-size: 4rem 4rem;
+}
+
+/* Masks. Geometry, not colour: they fade a layer toward an edge. */
+.d3-fade-up {
+  mask-image: radial-gradient(120% 90% at 50% 100%, #000 30%, transparent 85%);
+}
+.d3-fade-down {
+  mask-image: linear-gradient(to bottom, #000 40%, transparent 100%);
+}
+
+/* Contour field: concentric ridgelines, the one ornament the paper carries. */
+/* Contour plate. The plate is a greyscale luminance mask — the lines are
+   white, the ground is black — so colour comes from a token, not the file.
+   Where masks are unsupported a drawn gradient stands in. */
+.d3-contours {
+  background-image:
+    repeating-radial-gradient(
+      ellipse 140% 90% at 88% 110%,
+      transparent 0 22px,
+      color-mix(in oklab, var(--ink) 9%, transparent) 22px 23px
+    );
+}
+@supports (mask-mode: luminance) {
+  .d3-contours {
+    /* The colour is a flat gradient rather than a background-color on
+       purpose: the plate only paints where the mask lets it, but a contrast
+       checker cannot see masks and would otherwise treat this as an opaque
+       copper sheet under every label on the page. */
+    --plate: color-mix(in oklab, var(--live) 42%, var(--ink) 20%);
+    background-image: linear-gradient(var(--plate), var(--plate));
+    /* Plate, intersected with a fade so the lines thin out toward the top
+       where the ticker and the heading sit. */
+    mask-image:
+      image-set(url("/plates/contours.avif") type("image/avif"), url("/plates/contours.webp") type("image/webp")),
+      linear-gradient(to top, #000 35%, transparent 100%);
+    mask-mode: luminance, alpha;
+    mask-size: cover, auto;
+    mask-position: center, center;
+    mask-repeat: no-repeat, no-repeat;
+    mask-composite: intersect;
+  }
+}
+
+/* Scanline field, behind the stage. */
 .d3-scan {
   background-image: repeating-linear-gradient(
     to bottom,
     color-mix(in oklab, var(--ink) 3%, transparent) 0 1px,
     transparent 1px 3px
   );
-}
-
-/* Measurement grid. Two overlaid gradients, tinted by the live accent so it
-   drifts with the page. */
-.d3-grid {
-  background-image:
-    linear-gradient(to right, color-mix(in oklab, var(--accent) 9%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in oklab, var(--accent) 9%, transparent) 1px, transparent 1px);
-  background-size: 3.5rem 3.5rem;
-  mask-image: radial-gradient(120% 80% at 50% 0%, #000 20%, transparent 78%);
 }
 
 /* --- Load choreography -------------------------------------------------
@@ -248,8 +983,8 @@
 @keyframes d3-charge {
   from {
     opacity: 0;
-    transform: translateY(0.6rem);
-    font-variation-settings: "wdth" 62;
+    transform: translateY(0.35em);
+    font-variation-settings: "wght" 180;
   }
 }
 
@@ -266,8 +1001,24 @@
   }
 }
 
+@keyframes d3-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
 .d3-charge {
-  animation: d3-charge 900ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation: d3-charge 1100ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+/* A line of a charged headline, locked at the break the resting weight
+   chose. Lighter weights may run a few pixels long; they may not re-wrap. */
+.d3-line {
+  display: block;
+  white-space: nowrap;
 }
 .d3-rise {
   animation: d3-rise 700ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
@@ -276,34 +1027,43 @@
   transform-origin: left;
   animation: d3-bar 1000ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
+/* The one always-on animation on the page: the live pip. Only the dot
+   flickers — the label beside it must hold its contrast at every frame. */
+.d3-blink::before {
+  animation: d3-flicker 2400ms steps(2, jump-none) infinite;
+}
 
 /* --- Controls ---------------------------------------------------------- */
 
+/* Ticket button: a filled rectangle with an inset rule, like a stamped
+   coupon. The inset rule opens on hover; nothing moves. */
 .d3-btn {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
-  padding: 0.95rem 1.75rem;
+  gap: 0.7rem;
+  padding: 1rem 1.6rem;
   font-family: var(--fm);
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  font-variation-settings: "wdth" 87.5;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--accent-ink);
   background: var(--accent);
   border: 1px solid var(--accent);
-  clip-path: polygon(0 0, calc(100% - 0.6rem) 0, 100% 0.6rem, 100% 100%, 0.6rem 100%, 0 calc(100% - 0.6rem));
+  box-shadow: inset 0 0 0 3px var(--accent), inset 0 0 0 4px color-mix(in oklab, var(--accent-ink) 45%, transparent);
   transition:
-    filter 200ms cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1),
-    transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow 240ms cubic-bezier(0.16, 1, 0.3, 1),
+    filter 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .d3-btn:hover:not(:disabled) {
-  filter: brightness(1.12);
-  box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent) 45%, transparent), 0 0 32px -6px var(--accent);
-  transform: translateY(-1px);
+  box-shadow: inset 0 0 0 5px var(--accent), inset 0 0 0 6px color-mix(in oklab, var(--accent-ink) 55%, transparent), 0 0 36px -10px var(--accent);
+  filter: brightness(1.06);
+}
+.d3-btn:active:not(:disabled) {
+  filter: brightness(0.94);
 }
 .d3-btn:disabled {
   opacity: 0.55;
@@ -314,42 +1074,51 @@
   color: var(--ink);
   background: transparent;
   border-color: var(--edge);
+  box-shadow: none;
 }
 .d3-btn-ghost:hover:not(:disabled) {
   border-color: var(--accent);
   color: var(--accent);
-  box-shadow: none;
+  box-shadow: inset 0 0 0 1px var(--accent);
   filter: none;
 }
 
-/* Inputs read as terminal fields: dark well, energised on focus. */
+/* Ruled field: a paper form line. The full box is invisible until the field
+   is touched, then the rule thickens and the well lifts. */
 .d3-input {
   width: 100%;
-  background: var(--bg);
-  border: 1px solid var(--edge);
+  background: color-mix(in oklab, var(--ink) 3%, transparent);
+  border: 1px solid transparent;
+  border-bottom: 1px solid var(--edge);
   border-radius: 0;
-  padding: 0.7rem 0.85rem;
+  padding: 0.75rem 0.7rem;
   font-family: var(--fb);
   font-size: 0.9375rem;
   line-height: 1.4;
   color: var(--ink);
   transition:
     border-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
     box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .d3-input::placeholder {
   color: var(--ink-3);
 }
 .d3-input:hover:not(:disabled) {
-  border-color: color-mix(in oklab, var(--accent) 55%, var(--edge));
+  border-bottom-color: color-mix(in oklab, var(--accent) 55%, var(--edge));
 }
 .d3-input:focus {
   outline: none;
+  background: var(--surface);
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent), 0 0 22px -8px var(--accent);
+  box-shadow: 0 2px 0 0 var(--accent);
+}
+.d3-input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 .d3-input[aria-invalid="true"] {
-  border-color: var(--alarm);
+  border-bottom-color: var(--alarm);
   box-shadow: inset 2px 0 0 var(--alarm);
 }
 
@@ -358,7 +1127,7 @@
   padding-right: 2rem;
   background-image: linear-gradient(45deg, transparent 50%, var(--ink-2) 50%),
     linear-gradient(135deg, var(--ink-2) 50%, transparent 50%);
-  background-position: calc(100% - 1.1rem) 1.05rem, calc(100% - 0.75rem) 1.05rem;
+  background-position: calc(100% - 1.1rem) 1.1rem, calc(100% - 0.75rem) 1.1rem;
   background-size: 5px 5px, 5px 5px;
   background-repeat: no-repeat;
 }
@@ -368,67 +1137,124 @@
   line-height: 1.6;
 }
 
-/* Breaker-style selector: a physical-feeling switch for the two fields that
-   tier the lead. Closed = energised. */
-.d3-breaker {
+/* Ticket: a radio option drawn as a perforated stub. Selected = punched. */
+.d3-ticket {
   position: relative;
   display: block;
   cursor: pointer;
-  padding: 0.85rem 0.95rem 0.85rem 2.4rem;
-  background: var(--bg);
+  padding: 0.85rem 0.95rem 0.85rem 2.6rem;
+  background: var(--surface);
   border: 1px solid var(--edge);
   transition:
     border-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
     background-color 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
-.d3-breaker:hover {
+.d3-ticket:hover {
   border-color: color-mix(in oklab, var(--accent) 55%, var(--edge));
 }
-.d3-breaker input {
+.d3-ticket input {
   position: absolute;
   opacity: 0;
   pointer-events: none;
 }
-/* The switch body */
-.d3-breaker::before {
-  content: "";
-  position: absolute;
-  left: 0.85rem;
-  top: 1.05rem;
-  width: 0.7rem;
-  height: 1.2rem;
-  border: 1px solid var(--edge);
-  transition: border-color 180ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-/* The contact, which travels when the breaker closes */
-.d3-breaker::after {
+/* The punch. */
+.d3-ticket::before {
   content: "";
   position: absolute;
   left: 0.95rem;
-  top: 1.75rem;
-  width: 0.5rem;
-  height: 0.35rem;
-  background: var(--ink-3);
+  top: 1.05rem;
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 1px solid var(--edge);
+  border-radius: 50%;
   transition:
-    top 200ms cubic-bezier(0.5, 0, 0.1, 1),
-    background-color 200ms cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1);
+    border-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
-.d3-breaker:has(input:checked) {
+/* A checkbox ticket punches square, so pick-many reads differently from pick-one. */
+.d3-ticket:has(input[type="checkbox"])::before {
+  border-radius: 0;
+}
+.d3-ticket:has(input:checked) {
   border-color: var(--accent);
-  background: color-mix(in oklab, var(--accent) 9%, var(--bg));
+  background: color-mix(in oklab, var(--accent) 8%, var(--surface));
 }
-.d3-breaker:has(input:checked)::before {
+.d3-ticket:has(input:checked)::before {
   border-color: var(--accent);
-}
-.d3-breaker:has(input:checked)::after {
-  top: 1.2rem;
   background: var(--accent);
-  box-shadow: 0 0 12px -1px var(--accent);
+  box-shadow: inset 0 0 0 3px var(--surface);
 }
-.d3-breaker:has(input:focus-visible) {
+.d3-ticket:has(input:focus-visible) {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
+}
+.d3-ticket:has(input:disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Chip: a small toggle, for presets. */
+.d3-chip {
+  font-family: var(--fm);
+  font-size: 0.5625rem;
+  font-weight: 600;
+  font-variation-settings: "wdth" 87.5;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--edge);
+  color: var(--ink-2);
+  background: transparent;
+  transition:
+    color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.d3-chip:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.d3-chip[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 10%, transparent);
+}
+.d3-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Cell: one GPU in the allocation board. */
+.d3-cell {
+  position: relative;
+  aspect-ratio: 1;
+  border: 1px solid var(--edge);
+  background: transparent;
+  transition:
+    background-color 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.d3-cell[data-on="true"] {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 78%, var(--surface));
+  box-shadow: 0 0 14px -6px var(--accent);
+}
+.d3-cell[data-on="partial"] {
+  border-color: var(--accent);
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--accent) 60%, transparent) 0 2px,
+    transparent 2px 6px
+  );
+}
+.d3-cell:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.d3-cell:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
 }
 
 /* --- Links ------------------------------------------------------------- */
@@ -469,7 +1295,7 @@
 .d3-table td {
   text-align: left;
   vertical-align: baseline;
-  padding: 0.85rem 0.9rem;
+  padding: 0.9rem 0.9rem;
   border-bottom: 1px solid var(--rule);
 }
 .d3-table thead th {
@@ -491,20 +1317,15 @@
 .d3-num {
   text-align: right !important;
   font-family: var(--fm);
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
 }
-/* The row that is us. Declared as a solid token rather than an alpha mix so
-   its contrast can be checked rather than guessed at; --row-ours is the value
-   the mix resolves to at the cold end of the accent travel, which is the
-   lightest it ever gets. */
+/* The row that is us. --row-ours is the value this mix resolves to at the warm
+   end of the travel, which is the lightest it ever gets on paper. */
 .d3-row-ours td,
 .d3-row-ours th {
-  background: color-mix(in oklab, var(--accent) 7%, transparent);
+  background: color-mix(in oklab, var(--accent) 9%, transparent);
 }
 
-/* Narrow measure: each row becomes a channel block — name on the left, figure
-   on the right, and the note that explains it running full width underneath.
-   A console reads top to bottom on a phone; it does not scroll sideways. */
 @media (max-width: 33rem) {
   .d3-table thead {
     position: absolute;
@@ -539,13 +1360,12 @@
 .d3-pip {
   display: inline-flex;
   align-items: baseline;
-  gap: 0.45rem;
-  /* Capped so the label wraps inside a narrow chart column instead of setting
-     the column's minimum width. */
+  gap: 0.5rem;
   max-width: 100%;
   font-family: var(--fm);
   font-size: 0.5625rem;
   font-weight: 600;
+  font-variation-settings: "wdth" 87.5;
   letter-spacing: 0.12em;
   line-height: 1.3;
   text-transform: uppercase;
@@ -555,8 +1375,89 @@
   flex: 0 0 auto;
   width: 0.4rem;
   height: 0.4rem;
-  /* Baseline-aligned text needs the dot nudged onto the x-height. */
   transform: translateY(-0.1em);
   background: currentColor;
   box-shadow: 0 0 8px -1px currentColor;
+}
+
+/* --- Process: actor markers --------------------------------------------- */
+.d3-actor {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  flex: 0 0 auto;
+  transform: translateY(-0.05em);
+  border: 1px solid var(--ink-2);
+}
+.d3-actor[data-actor="you"] {
+  background: transparent;
+}
+.d3-actor[data-actor="us"] {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.d3-actor[data-actor="both"] {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, var(--accent) 50%, transparent 50%);
+}
+
+/* --- FAQ: native disclosures ------------------------------------------- */
+.d3-faq {
+  border-bottom: 1px solid var(--rule);
+}
+.d3-faq summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1rem 0;
+  cursor: pointer;
+  list-style: none;
+}
+.d3-faq summary::-webkit-details-marker {
+  display: none;
+}
+.d3-faq summary:hover > :first-child {
+  color: var(--accent);
+}
+.d3-faq summary:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.d3-faq-mark {
+  position: relative;
+  flex: 0 0 auto;
+  width: 0.75rem;
+  height: 0.75rem;
+  transform: translateY(0.05em);
+}
+.d3-faq-mark::before,
+.d3-faq-mark::after {
+  content: "";
+  position: absolute;
+  inset: 50% 0 auto 0;
+  height: 1px;
+  background: var(--accent);
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.d3-faq-mark::after {
+  transform: rotate(90deg);
+}
+.d3-faq[open] .d3-faq-mark::after {
+  transform: rotate(0deg);
+}
+
+/* --- Marquee rule: a running caption along a section edge -------------- */
+@keyframes d3-run {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.d3-run {
+  display: flex;
+  width: max-content;
+  animation: d3-run 48s linear infinite;
+}
+.d3-run > * {
+  flex: 0 0 auto;
 }

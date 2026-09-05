@@ -10,6 +10,7 @@ import {
   RATE,
 } from "@/content";
 import { SITE } from "@/config/site";
+import { SourceLink } from "@/components/shared/SourceLink";
 
 /**
  * The full sourced table, D3's version.
@@ -136,14 +137,9 @@ export function RateTable() {
                     Source
                   </span>
                   {src.url ? (
-                    <a
-                      href={src.url}
-                      target="_blank"
-                      rel="noopener noreferrer nofollow"
-                      className="d3-link d3-tag text-[0.5rem]"
-                    >
+                    <SourceLink href={src.url} sourceId={src.id} className="d3-link d3-tag text-[0.5rem]">
                       {src.label} ↗
-                    </a>
+                    </SourceLink>
                   ) : (
                     <span className="d3-tag text-[0.5rem] text-[var(--ink-3)]">{src.label}</span>
                   )}
@@ -193,7 +189,7 @@ export function Methodology() {
       <h2
         className="d3-display mt-6 text-[clamp(1.5rem,3.4vw,2.5rem)]"
         data-load
-        data-load-from="78"
+        data-load-from="300"
       >
         {METHODOLOGY.heading}
       </h2>

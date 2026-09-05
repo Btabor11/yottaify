@@ -3,8 +3,8 @@
 /**
  * HEADLESS RESERVATION FORM.
  *
- * All three directions share this hook. It owns state, validation, submission,
- * and analytics; each direction owns only markup and style.
+ * It owns state, validation, submission, and analytics; the component owns
+ * only markup and style.
  *
  * It deliberately has no dependency on GSAP, Lenis, Motion, or WebGL. The form
  * is the point of the site, so it must never be gated on a scroll trigger or a
@@ -12,10 +12,11 @@
  */
 
 import { useCallback, useRef, useState } from "react";
-import { submitReservation } from "./submitReservation";
+import { resetSubmissionId, submitReservation } from "./submitReservation";
 import { EMPTY_FORM_STATE } from "./form-state";
 import type { FieldErrors, ReservationFormState, ReservationInput } from "./validation";
 import { toMonth, trackReservationError, trackReservationStart, trackReservationSubmit } from "./analytics";
+import { track as journey } from "./journey";
 
 /**
  * The schema, fetched on demand.
@@ -54,6 +55,10 @@ export interface UseReservationForm {
   completion: { filled: number; total: number };
   /** For focus management: the first field that failed. */
   firstErrorField: keyof ReservationInput | null;
+  /** Reference code returned by the server on success. Null if the endpoint did not supply one. */
+  reference: string | null;
+  /** The values as they were submitted, kept through the success state for the follow-up. */
+  submitted: ReservationInput | null;
 }
 
 const REQUIRED_FIELDS: (keyof ReservationFormState)[] = [
@@ -71,6 +76,8 @@ export function useReservationForm(direction: string): UseReservationForm {
   const [status, setStatus] = useState<FormStatus>("idle");
   const [formError, setFormError] = useState<string | null>(null);
   const [attempted, setAttempted] = useState(false);
+  const [reference, setReference] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState<ReservationInput | null>(null);
   const startedRef = useRef(false);
 
   const setValue = useCallback(
@@ -78,6 +85,7 @@ export function useReservationForm(direction: string): UseReservationForm {
       if (!startedRef.current) {
         startedRef.current = true;
         trackReservationStart(direction);
+        journey.formStarted();
         // Someone is filling the form in. Fetch the schema now, while they
         // are still typing, so it is present long before the first check.
         void warmValidator();
@@ -131,6 +139,7 @@ export function useReservationForm(direction: string): UseReservationForm {
           setErrors(validated.errors);
           setStatus("idle");
           trackReservationError(direction, "validation");
+          journey.validationFailed();
           return;
         }
 
@@ -145,6 +154,8 @@ export function useReservationForm(direction: string): UseReservationForm {
             startMonth: toMonth(validated.data.startDate),
             mode: result.mode,
           });
+          setReference(result.reference);
+          setSubmitted(validated.data);
           setStatus("success");
           return;
         }
@@ -153,6 +164,7 @@ export function useReservationForm(direction: string): UseReservationForm {
           setErrors(result.errors);
           setStatus("idle");
           trackReservationError(direction, "validation");
+          journey.validationFailed();
           return;
         }
 
@@ -170,7 +182,10 @@ export function useReservationForm(direction: string): UseReservationForm {
     setStatus("idle");
     setFormError(null);
     setAttempted(false);
+    setReference(null);
+    setSubmitted(null);
     startedRef.current = false;
+    resetSubmissionId();
   }, []);
 
   const filled = REQUIRED_FIELDS.filter((f) => values[f].trim().length > 0).length;
@@ -199,5 +214,7 @@ export function useReservationForm(direction: string): UseReservationForm {
     reset,
     completion: { filled, total: REQUIRED_FIELDS.length },
     firstErrorField,
+    reference,
+    submitted,
   };
 }

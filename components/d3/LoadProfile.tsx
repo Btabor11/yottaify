@@ -128,7 +128,7 @@ export function LoadProfile() {
                             bottom: 0,
                             height: `${(rangePct / heightPct) * 100}%`,
                             top: 0,
-                            background: `repeating-linear-gradient(to bottom, ${cap}22 0 1px, transparent 1px 4px)`,
+                            background: `repeating-linear-gradient(to bottom, color-mix(in oklab, ${cap} 22%, transparent) 0 1px, transparent 1px 4px)`,
                           }}
                         />
                       )}
@@ -150,7 +150,8 @@ export function LoadProfile() {
           </div>
 
           {/* --- labels under the plot ------------------------------- */}
-          <ul className="mt-3 flex gap-2 border-t border-[var(--rule-strong)] pt-3 md:gap-4">
+          {/* Wide: one label stack under each column. */}
+          <ul className="mt-3 hidden gap-2 border-t border-[var(--rule-strong)] pt-3 md:flex md:gap-4">
             {CHART_ROWS.map((r) => {
               const kind = verificationKind(r.sourceId);
               const cap = CAP_COLOR[kind] ?? "var(--ink-2)";
@@ -175,8 +176,63 @@ export function LoadProfile() {
               );
             })}
           </ul>
+
+          {/* Narrow: columns are too thin to carry words, so each one takes an
+              index and the words move into a ledger keyed by the same index. */}
+          <div aria-hidden className="mt-2 flex gap-2 border-t border-[var(--rule-strong)] pt-2 md:hidden">
+            {CHART_ROWS.map((r, i) => {
+              const kind = verificationKind(r.sourceId);
+              const cap = CAP_COLOR[kind] ?? "var(--ink-2)";
+              return (
+                <span
+                  key={r.id}
+                  className="d3-figure min-w-0 flex-1 text-center text-[0.5625rem] leading-none"
+                  style={{ color: r.isUs ? "var(--accent)" : cap }}
+                >
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+              );
+            })}
+          </div>
         </div>
       </div>
+
+      <ol className="mt-5 border-t border-[var(--rule-strong)] md:hidden">
+        {CHART_ROWS.map((r, i) => {
+          const kind = verificationKind(r.sourceId);
+          const cap = CAP_COLOR[kind] ?? "var(--ink-2)";
+          return (
+            <li
+              key={r.id}
+              className="grid grid-cols-[1.5rem_minmax(0,1fr)_auto] items-baseline gap-x-3 border-b border-[var(--rule)] py-3 last:border-0"
+            >
+              <span
+                className="d3-figure text-[0.625rem] leading-none"
+                style={{ color: r.isUs ? "var(--accent)" : cap }}
+              >
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <div className="min-w-0">
+                <p className="d3-tag text-[0.5rem] leading-snug text-[var(--ink-2)]">{r.provider}</p>
+                <p className="d3-pip mt-1.5 text-[0.4375rem]" style={{ color: cap }}>
+                  {verificationShort(r.sourceId)}
+                </p>
+              </div>
+              <div className="text-right">
+                <p
+                  className="d3-figure text-[0.875rem] leading-none"
+                  style={{ color: r.isUs ? "var(--accent)" : "var(--ink)" }}
+                >
+                  {r.display}
+                </p>
+                <p className="d3-figure mt-1.5 text-[0.5625rem] text-[var(--ink-3)]">
+                  {r.isUs ? "datum" : multipleOfOurRate(r.low)}
+                </p>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
 
       <p className="d3-body mt-5 max-w-[74ch] text-[0.75rem] leading-relaxed text-[var(--ink-3)] text-pretty">
         Hatched columns are published prices we could not confirm as in stock — including the one

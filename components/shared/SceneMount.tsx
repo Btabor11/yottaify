@@ -23,6 +23,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ComponentType } from "react";
 import { useInView, useReducedMotion, useWebGLSupported } from "@/lib/motion";
+import { subscribeScroll } from "@/lib/scroll-runtime";
 
 /**
  * Idle budget for a scene built on three.js.
@@ -96,8 +97,20 @@ export function SceneMount({
   fadeMs = 700,
   rootMargin = "300px",
   idleTimeout = 2000,
+  progressMode = "reveal",
+  className,
 }: {
   children: React.ReactNode;
+  /**
+   * How progress is measured.
+   *  · "reveal": this element's own travel through the viewport, 0 as its top
+   *    enters at the bottom, 1 as its bottom leaves at the top.
+   *  · "pin": the element is sticky inside its parent; progress is how far
+   *    the parent has scrolled past its pinned top, 0..1 over the parent's
+   *    height less one viewport. This is what a scroll-driven story wants.
+   */
+  progressMode?: "reveal" | "pin";
+  className?: string;
   /**
    * A bare `() => import("./Scene")`, called only once we have decided to
    * mount. Deliberately not `next/dynamic`: that emits a preload hint into the
@@ -164,34 +177,34 @@ export function SceneMount({
     return () => window.clearTimeout(id);
   }, [mounted, ready]);
 
+  // Progress is measured in the shared read phase, alongside every other
+  // measurement the frame needs, so it costs no layout of its own. It lands
+  // in a ref: the scene reads it inside its own loop and React never renders
+  // on scroll.
   useEffect(() => {
     if (!mounted) return;
-    let frame = 0;
-    const measure = () => {
-      frame = 0;
-      const el = wrapRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const span = rect.height + window.innerHeight;
-      progressRef.current = Math.min(1, Math.max(0, (window.innerHeight - rect.top) / span));
-    };
-    const onScroll = () => {
-      if (!frame) frame = requestAnimationFrame(measure);
-    };
-    measure();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll, { passive: true });
-    return () => {
-      if (frame) cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, [mounted, wrapRef]);
+    return subscribeScroll({
+      read: (frame) => {
+        const el = wrapRef.current;
+        if (!el) return;
+        if (progressMode === "pin") {
+          const host = el.closest<HTMLElement>("[data-pin-host]") ?? el.parentElement ?? el;
+          const rect = host.getBoundingClientRect();
+          const span = Math.max(1, rect.height - frame.vh);
+          progressRef.current = Math.min(1, Math.max(0, -rect.top / span));
+          return;
+        }
+        const rect = el.getBoundingClientRect();
+        const span = rect.height + frame.vh;
+        progressRef.current = Math.min(1, Math.max(0, (frame.vh - rect.top) / span));
+      },
+    });
+  }, [mounted, wrapRef, progressMode]);
 
   return (
-    <div ref={wrapRef} className="relative">
+    <div ref={wrapRef} className={className ? `relative ${className}` : "relative"}>
       <div
-        className="transition-opacity"
+        className="h-full transition-opacity"
         style={{ opacity: ready ? 0 : 1, transitionDuration: `${fadeMs}ms` }}
         aria-hidden={ready || undefined}
       >

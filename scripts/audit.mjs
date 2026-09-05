@@ -55,14 +55,17 @@ function check(label, hits) {
   const hits = [];
   const palettes = files.filter((f) => basename(f) === "palette.ts");
   for (const f of palettes) {
-    const dir = basename(dirname(f));
-    const sheet = css.find((c) => basename(c) === `${dir}.css`);
+    // A palette names its sheet with `@sheet d3.css` in its header; otherwise the parent directory names it.
+    const src = read(f);
+    const named = src.match(/@sheet\s+([\w.()-]+\.css)/)?.[1];
+    const want = named ?? `${basename(dirname(f))}.css`;
+    const sheet = css.find((c) => basename(c) === want);
     if (!sheet) {
-      hits.push(`${f}: no matching ${dir}.css to check against`);
+      hits.push(`${f}: no matching ${want} to check against`);
       continue;
     }
     const sheetSrc = read(sheet);
-    for (const line of read(f).split("\n")) {
+    for (const line of src.split("\n")) {
       const m = line.match(/"(#[0-9a-fA-F]{6})"\s*\/\*\s*(--[\w-]+)\s*\*\//);
       if (!m) continue;
       const [, hex, token] = m;
@@ -89,36 +92,114 @@ function check(label, hits) {
     const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
     return (x + 0.05) / (y + 0.05);
   };
-  // Grounds that actually carry text in each direction. D2 uses --surface-2
-  // only as an SVG fill, so it is not a text ground there.
+  // Grounds that actually carry text, per sheet and per token block. d3 has
+  // two blocks — `.d3` (dark) and `.d3-paper` (paper) — and both are checked,
+  // because a component styled with semantic tokens lands on either.
   const TEXT_GROUNDS = {
-    d1: ["--bg", "--surface", "--surface-2"],
-    d2: ["--bg", "--surface"],
-    d3: ["--bg", "--surface", "--surface-2", "--row-ours"],
-    legal: ["--bg", "--surface"],
+    d3: { blocks: [".d3", ".d3-paper"], grounds: ["--bg", "--surface", "--surface-2", "--row-ours"] },
+    legal: { blocks: [".legal"], grounds: ["--bg", "--surface"] },
+    // The desk plates itself in four steps, and a token is only safe if it
+    // clears on the deepest of them.
+    admin: { blocks: [".admin"], grounds: ["--bg", "--surface", "--surface-2", "--surface-3"] },
   };
-  const INKS = ["--ink", "--ink-2", "--ink-3", "--accent", "--accent-2", "--caution", "--hot", "--alarm", "--volt", "--plasma"];
+  const INKS = ["--ink", "--ink-2", "--ink-3", "--accent", "--accent-2", "--caution", "--hot", "--alarm", "--ember", "--hbm", "--shoal", "--deep"];
   const hits = [];
-  for (const [dir, grounds] of Object.entries(TEXT_GROUNDS)) {
+  /** Tokens declared inside `selector { … }`, first block only. */
+  const blockTokens = (src, selector) => {
+    const start = src.indexOf(`${selector} {`);
+    if (start < 0) return null;
+    const end = src.indexOf("\n}", start);
+    const tok = {};
+    for (const m of src.slice(start, end).matchAll(/(--[\w-]+):\s*(#[0-9a-fA-F]{6})/g)) tok[m[1]] ??= m[2];
+    return tok;
+  };
+  for (const [dir, { blocks, grounds }] of Object.entries(TEXT_GROUNDS)) {
     const sheet = css.find((c) => basename(c) === `${dir}.css`);
     if (!sheet) continue;
-    const tok = {};
-    for (const m of read(sheet).matchAll(/(--[\w-]+):\s*(#[0-9a-fA-F]{6})/g)) tok[m[1]] ??= m[2];
-    for (const ink of INKS) {
-      if (!tok[ink]) continue;
+    const src = read(sheet);
+    for (const block of blocks) {
+      const tok = blockTokens(src, block);
+      if (!tok) {
+        if (block === blocks[0]) hits.push(`${dir}: no "${block} {" token block found`);
+        continue;
+      }
+      for (const ink of INKS) {
+        if (!tok[ink]) continue;
+        for (const g of grounds) {
+          if (!tok[g]) continue;
+          const r = ratio(tok[ink], tok[g]);
+          if (r < 4.5) hits.push(`${block}: ${ink} ${tok[ink]} on ${g} ${tok[g]} is ${r.toFixed(2)}:1, needs 4.5:1`);
+        }
+      }
       for (const g of grounds) {
-        if (!tok[g]) continue;
-        const r = ratio(tok[ink], tok[g]);
-        if (r < 4.5) hits.push(`${dir}: ${ink} ${tok[ink]} on ${g} ${tok[g]} is ${r.toFixed(2)}:1, needs 4.5:1`);
+        if (!tok["--edge"] || !tok[g]) continue;
+        const r = ratio(tok["--edge"], tok[g]);
+        if (r < 3) hits.push(`${block}: --edge on ${g} is ${r.toFixed(2)}:1, needs 3:1 as a control border`);
       }
     }
-    for (const g of grounds) {
-      if (!tok["--edge"] || !tok[g]) continue;
-      const r = ratio(tok["--edge"], tok[g]);
-      if (r < 3) hits.push(`${dir}: --edge on ${g} is ${r.toFixed(2)}:1, needs 3:1 as a control border`);
-    }
   }
-  check("every ink clears 4.5:1 and --edge clears 3:1", hits);
+  check("every ink clears 4.5:1 and --edge clears 3:1, on both grounds", hits);
+
+  /* ---- 2b'. the live colour, sampled along its travel -------------------
+     `--live` is a color-mix in OKLCH between --ember and --hbm, the long way
+     round the hue wheel, and it is used as text (voice clauses, lead figures).
+     Reproduce the curve here and check every stop against every ground. */
+  {
+    const rampHits = [];
+    const s2l = (c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+    const l2s = (c) => (c <= 0.0031308 ? c * 12.92 : 1.055 * c ** (1 / 2.4) - 0.055);
+    const hex2rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
+    const rgb2hex = (rgb) => "#" + rgb.map((v) => Math.round(Math.min(1, Math.max(0, v)) * 255).toString(16).padStart(2, "0")).join("");
+    const toLch = ([r, g, b]) => {
+      const [lr, lg, lb] = [s2l(r), s2l(g), s2l(b)];
+      const l = Math.cbrt(0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb);
+      const m = Math.cbrt(0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb);
+      const s = Math.cbrt(0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb);
+      const L = 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s;
+      const a = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s;
+      const bb = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
+      let H = (Math.atan2(bb, a) * 180) / Math.PI;
+      if (H < 0) H += 360;
+      return [L, Math.hypot(a, bb), H];
+    };
+    const toRgb = ([L, C, H]) => {
+      const h = (H * Math.PI) / 180;
+      const a = C * Math.cos(h);
+      const b = C * Math.sin(h);
+      const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+      const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+      const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
+      return [
+        l2s(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s),
+        l2s(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s),
+        l2s(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s),
+      ];
+    };
+    const mixLonger = (f, t, x) => {
+      const [L1, C1, H1] = toLch(hex2rgb(f));
+      const [L2, C2, H2] = toLch(hex2rgb(t));
+      let d = H2 - H1;
+      if (d > -180 && d < 180) d = d > 0 ? d - 360 : d + 360;
+      return rgb2hex(toRgb([L1 + (L2 - L1) * x, C1 + (C2 - C1) * x, (((H1 + d * x) % 360) + 360) % 360]));
+    };
+    const sheet = css.find((c) => basename(c) === "d3.css");
+    if (sheet) {
+      const src = read(sheet);
+      for (const block of [".d3", ".d3-paper"]) {
+        const tok = blockTokens(src, block);
+        if (!tok || !tok["--ember"] || !tok["--hbm"]) continue;
+        for (let i = 0; i <= 40; i++) {
+          const c = mixLonger(tok["--ember"], tok["--hbm"], i / 40);
+          for (const g of ["--bg", "--surface", "--surface-2"]) {
+            if (!tok[g]) continue;
+            const r = ratio(c, tok[g]);
+            if (r < 4.5) rampHits.push(`${block}: --live at ${(i / 40).toFixed(3)} (${c}) on ${g} is ${r.toFixed(2)}:1`);
+          }
+        }
+      }
+    }
+    check("the live colour clears 4.5:1 at every point of its travel", rampHits);
+  }
 }
 
 /* ---- 2c. decorative tokens are never set as legible text --------------- */
@@ -209,6 +290,11 @@ function check(label, hits) {
     // negation, the list items are bare nouns.
     '"Uptime history"',
     '"An SLA"',
+    // Options in the follow-up's "what do you need from a provider" multi-select.
+    // The client is telling us what they need; we are not claiming to have it.
+    '{ value: "soc2", label: "SOC 2 report" }',
+    '{ value: "iso27001", label: "ISO 27001" }',
+    '{ value: "hipaa", label: "HIPAA" }',
   ];
   const NEG = /\b(not|no|never|without|isn'?t|aren'?t|don'?t|doesn'?t|zero|lack|nothing|none|neither|nor|avoid|unverified|cannot|can'?t)\b/i;
   const patterns = [
@@ -224,7 +310,12 @@ function check(label, hits) {
     [/\b\d{3,}\+? (customers|GPUs deployed|users|teams)\b/i, "statistics counter"],
   ];
   const hits = [];
+  // A claim has to reach a reader. Server-only code and the market data
+  // fetchers pick the cheapest listing *as data*; that is a variable, not
+  // a sentence. Everything that renders is still scanned.
+  const NEVER_RENDERED = /^lib\/(server|market)\//;
   for (const f of files) {
+    if (NEVER_RENDERED.test(f)) continue;
     read(f).split("\n").forEach((line, i) => {
       const t = line.trim();
       if (t.startsWith("*") || t.startsWith("//") || t.startsWith("/*")) return;
@@ -270,11 +361,15 @@ function check(label, hits) {
   check("every rate row carries a source and a date", bad);
 
   // Every sourceId referenced anywhere must resolve to an entry in SOURCES
-  // that carries both a URL and an as-of date.
+  // that carries both a URL and an as-of date. The market pipeline under
+  // lib/market keeps its own tracker registry (lib/market/sources) whose ids
+  // are not content sources, so it is not scanned here.
   const src = read("content/sources.ts");
   const entries = [...src.matchAll(/^ {2}([\w-]+):\s*\{([\s\S]*?)^ {2}\},/gm)].map(([, id, body]) => ({ id, body }));
   const referenced = new Set(
-    files.flatMap((f) => [...read(f).matchAll(/sourceId:\s*"([^"]+)"|source\("([^"]+)"\)/g)].map((m) => m[1] ?? m[2]))
+    files
+      .filter((f) => !f.startsWith("lib/market/"))
+      .flatMap((f) => [...read(f).matchAll(/sourceId:\s*"([^"]+)"|source\("([^"]+)"\)/g)].map((m) => m[1] ?? m[2]))
   );
   const byId = new Map(entries.map((e) => [e.id, e.body]));
   const bad2 = [];

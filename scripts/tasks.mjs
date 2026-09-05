@@ -9,7 +9,7 @@
  * at idle afterwards mostly does not. This lists every long task with its
  * position relative to LCP and the load event. Dev-only tooling.
  */
-import { assertHardware, launchGpu } from "./launch.mjs";
+import { launchGpu } from "./launch.mjs";
 
 const PORT = process.env.PORT ?? "4320";
 const base = `http://127.0.0.1:${PORT}`;

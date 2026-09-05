@@ -23,10 +23,15 @@ export const NAV: NavItem[] = [
   { id: "pricing", label: "Pricing", href: "#pricing" },
   { id: "specs", label: "Hardware", href: "#specs" },
   { id: "operator", label: "Operator", href: "#operator" },
+  { id: "name", label: "Name", href: "#name" },
+  { id: "process", label: "Process", href: "#process" },
+  { id: "faq", label: "Questions", href: "#faq" },
   { id: "reserve", label: "Reserve", href: "#reserve", cta: true },
 ];
 
 export const HERO = {
+  /** The status pip before the eyebrow. Changes to "Live" on the day. */
+  status: "Pre-launch",
   eyebrow: `${FLEET.total} × NVIDIA B300 · ${SITE.location.region} · ${SITE.availability}`,
   /** The headline promise. Verbatim from the brief. */
   headline: "B300 capacity in days, not months.",
@@ -78,18 +83,53 @@ export const SECTIONS = {
     heading: "One node, one memory domain",
     standfirst: `NVIDIA's published specification for the part, and what each number changes about the job you are trying to run.`,
   },
-  reserve: {
-    index: "03",
-    eyebrow: "Reserve",
-    heading: "Hold a slot",
-    standfirst: "",
-  },
   operator: {
-    index: "04",
+    index: "03",
     eyebrow: "Operator",
     heading: "Who runs this, and where it sits",
     standfirst: `${FACILITY.kind} in the ${SITE.location.region}. ${FACILITY.ownership}. ${FACILITY.advantage}.`,
   },
+  name: {
+    index: "03.2",
+    eyebrow: "The name",
+    heading: `Why ${SITE.name}`,
+    standfirst: "",
+  },
+  process: {
+    index: "04",
+    eyebrow: "Process",
+    heading: "Every step, in order",
+    standfirst:
+      "What to have ready, what a reservation does, and what happens between a slot and a running job.",
+  },
+  reserve: {
+    index: "06",
+    eyebrow: "Reserve",
+    heading: "Hold a slot",
+    standfirst: "",
+  },
+  faq: {
+    index: "05",
+    eyebrow: "Questions",
+    heading: "Asked before reserving",
+    standfirst:
+      "Answered with what we know, and marked where the answer is set on the call instead.",
+  },
+} as const;
+
+/**
+ * Drawing title block. Every paper section opens with one: the sheet number,
+ * the title, the date the figures were checked, and the scale. It is the
+ * device that says "this page can be argued with" without saying it.
+ */
+export const TITLEBLOCK = {
+  sheet: "Sheet",
+  title: "Title",
+  checked: "Checked",
+  scale: "Scale",
+  scaleValue: "Not to scale",
+  of: "of",
+  total: 6,
 } as const;
 
 export const FOOTER = {
@@ -102,6 +142,9 @@ export const FOOTER = {
         { label: "Pricing comparison", href: "/pricing", scope: "site" },
         { label: "Reserve capacity", href: "/#reserve", scope: "site" },
         { label: "Hardware", href: "/#specs", scope: "site" },
+        { label: "The name", href: "/#name", scope: "site" },
+        { label: "How it works", href: "/#process", scope: "site" },
+        { label: "Questions", href: "/#faq", scope: "site" },
       ],
     },
     {

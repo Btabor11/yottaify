@@ -1,6 +1,7 @@
 import { d3FontClass } from "./fonts";
 import { SmoothScroll } from "@/components/shared/SmoothScroll";
 import { Field } from "@/components/d3/Field";
+import { Telemetry } from "@/components/shared/Telemetry";
 import "./d3.css";
 
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
@@ -18,6 +19,10 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
 
       {/* Phase (the live accent), variable-width type, and scroll reveals. */}
       <Field />
+
+      {/* Journey capture: page and section views, so a reservation arrives
+          with the path that led to it. Renders nothing. */}
+      <Telemetry />
 
       {children}
     </div>

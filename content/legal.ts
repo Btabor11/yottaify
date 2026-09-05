@@ -9,9 +9,7 @@
  */
 
 import { SITE } from "@/config/site";
-import { FIELDS } from "./form";
-
-const collectedFields = FIELDS.map((f) => f.label.toLowerCase()).join(", ");
+import { PRIVACY_DRAFT } from "./data-inventory";
 
 export const LEGAL_NOTICE = {
   marker: "Draft — pending legal review",
@@ -24,42 +22,12 @@ export interface LegalSection {
   paragraphs: string[];
 }
 
-export const PRIVACY: { updated: string; sections: LegalSection[] } = {
-  updated: "2026-09-02",
-  sections: [
-    {
-      heading: "What we collect",
-      paragraphs: [
-        `Only what you type into the reservation form: ${collectedFields}. Nothing else is requested and nothing is inferred from a third-party data broker.`,
-        "If analytics is enabled, we record page views and a single event when a reservation is submitted successfully. It is off unless an environment variable turns it on.",
-      ],
-    },
-    {
-      heading: "Why we collect it",
-      paragraphs: [
-        "To size the fleet against real demand, to decide allocation order, and to reply to you. GPU count and target start date are what let us tell whether we can serve you at all.",
-      ],
-    },
-    {
-      heading: "What we do not do",
-      paragraphs: [
-        "We do not sell your information. We do not share it with advertising networks. We do not add you to a marketing sequence you did not ask for.",
-      ],
-    },
-    {
-      heading: "How long we keep it",
-      paragraphs: [
-        "Retention has not been set. It will be stated here before launch.",
-      ],
-    },
-    {
-      heading: "Your choices",
-      paragraphs: [
-        `Email ${SITE.email.general} to see what we hold on you, to correct it, or to have it deleted.`,
-      ],
-    },
-  ],
-};
+/**
+ * The privacy text is generated from content/data-inventory.ts, which is typed
+ * against the reservation schema: a column cannot be added without being
+ * described there, so this policy cannot silently fall behind what is stored.
+ */
+export const PRIVACY: { updated: string; sections: LegalSection[] } = PRIVACY_DRAFT;
 
 export const TERMS: { updated: string; sections: LegalSection[] } = {
   updated: "2026-09-02",

@@ -8,11 +8,22 @@
  * Reports FCP, LCP, CLS, long-task blocking time, and the bytes actually
  * shipped, split by type. Dev-only tooling. Not part of the shipped site.
  */
-import { assertHardware, launchGpu } from "./launch.mjs";
+import { launchGpu } from "./launch.mjs";
+import { adminContext, haveAdminCredentials } from "./admin-auth.mjs";
 
 const PORT = process.env.PORT ?? "4320";
-const base = `http://127.0.0.1:${PORT}`;
-const ROUTES = ["/", "/pricing"];
+const HOST = process.env.HOST ?? "127.0.0.1";
+const base = `http://${HOST}:${PORT}`;
+// ROUTES=/admin,/admin/r/R-XXXXXX to measure the desk. Admin routes need the
+// credentials on the context, or every measurement is of the login page.
+const ROUTES = (process.env.ROUTES ?? "/,/pricing").split(",").filter(Boolean);
+const needsAuth = (route) => route.startsWith("/admin") && route !== "/admin/login";
+
+if (ROUTES.some(needsAuth) && !haveAdminCredentials()) {
+  console.error("ADMIN_USER and ADMIN_PASSWORD are not in the environment.");
+  console.error("Run: node --env-file=.env.local scripts/perf.mjs");
+  process.exit(1);
+}
 
 // A mid-tier laptop on a good connection: 4x CPU slowdown, 40 Mbps, 40ms RTT.
 const CPU_SLOWDOWN = 4;
@@ -21,8 +32,9 @@ const NET = { offline: false, downloadThroughput: (40 * 1024 * 1024) / 8, upload
 // Warm every route first. The first hit to a Next server pays for module
 // loading and response caching that a real visitor to a warm deployment never
 // sees, and it swamps everything else in the measurement.
+const warmHeaders = haveAdminCredentials() ? (adminContext().extraHTTPHeaders ?? {}) : {};
 for (const route of ROUTES) {
-  await fetch(base + route).then((r) => r.text());
+  await fetch(base + route, { headers: needsAuth(route) ? warmHeaders : {} }).then((r) => r.text());
 }
 
 const browser = await launchGpu();
@@ -36,7 +48,8 @@ for (const route of ROUTES) {
   const samples = [];
 
   for (let run = 0; run < RUNS; run++) {
-    const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const viewport = { width: 1440, height: 900 };
+    const context = await browser.newContext(needsAuth(route) ? adminContext({ viewport }) : { viewport });
     const page = await context.newPage();
 
     // Split what the page needs to become interactive from what it fetches

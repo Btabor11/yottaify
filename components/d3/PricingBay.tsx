@@ -1,23 +1,16 @@
 import Link from "next/link";
 import { SITE } from "@/config/site";
-import {
-  SECTIONS,
-  PRICE_POSITION,
-  RATE,
-  row,
-  CONTRACT,
-  formatAsOf,
-} from "@/content";
+import { SECTIONS, PRICE_POSITION, RATE, row, CONTRACT, formatAsOf } from "@/content";
 import { Bay } from "./Bay";
 import { LoadProfile } from "./LoadProfile";
 
 /**
- * Bay 01 — price. Chart first, then the paragraph that keeps it honest.
+ * Sheet 01 — price. Chart first, then the paragraph that keeps it honest.
  *
  * The unflattering fact (a cheaper published listing exists) is put in the
- * aside of the section header, above the chart, rather than in a footnote
- * under it. A skeptical reader who finds the caveat themselves stops trusting
- * the page; one who is handed it keeps reading.
+ * aside of the sheet header, above the chart, rather than in a footnote under
+ * it. A skeptical reader who finds the caveat themselves stops trusting the
+ * page; one who is handed it keeps reading.
  */
 export function PricingBay() {
   const unverified = row("neocloud-low");
@@ -43,60 +36,48 @@ export function PricingBay() {
         }
       />
 
-      <div className="d3-bus">
-        <div />
-        <div>
-          <LoadProfile />
+      <LoadProfile />
 
-          {/* --- the position ------------------------------------------ */}
-          <div className="mt-14 grid gap-x-12 gap-y-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] md:mt-20">
-            <h3
-              className="d3-display max-w-[20ch] text-[clamp(1.5rem,3.6vw,2.75rem)] text-balance"
-              data-load
-              data-load-from="78"
-            >
-              {PRICE_POSITION.heading}
-            </h3>
-            <div className="space-y-5" data-r-group>
-              <p className="d3-body text-[0.9375rem] text-[var(--ink-2)] text-pretty">
-                {PRICE_POSITION.body}
-              </p>
-              <p className="d3-body text-[0.9375rem] text-[var(--ink-2)] text-pretty">
-                {PRICE_POSITION.body2}
-              </p>
-            </div>
-          </div>
+      {/* --- the position -------------------------------------------------- */}
+      <div className="mt-16 grid gap-x-14 gap-y-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,32rem)] md:mt-24">
+        <h3
+          className="d3-display max-w-[7.7em] text-[clamp(2rem,5vw,4rem)] text-balance"
+          data-load
+          data-load-from="300"
+        >
+          {PRICE_POSITION.heading}
+        </h3>
+        <div className="space-y-6 md:space-y-5" data-r-group>
+          <p className="d3-voice text-[1.375rem] leading-[1.15] text-[var(--ink)] text-pretty md:text-[1.75rem]">
+            {PRICE_POSITION.body}
+          </p>
+          <p className="d3-body text-[0.9375rem] text-[var(--ink-2)] text-pretty">{PRICE_POSITION.body2}</p>
+        </div>
+      </div>
 
-          {/* --- committed + the full table ---------------------------- */}
-          <div className="mt-14 grid gap-px border border-[var(--rule-strong)] bg-[var(--rule)] md:mt-16 lg:grid-cols-2">
-            <div className="bg-[var(--surface)] p-6 md:p-8">
-              <p className="d3-tag text-[var(--ink-3)]">Committed terms</p>
-              <p
-                className="d3-display mt-3 text-[clamp(1.25rem,2.4vw,1.875rem)]"
-                data-load
-                data-load-from="80"
-              >
-                Below {RATE.display}
-              </p>
-              <p className="d3-body mt-3 max-w-[46ch] text-[0.875rem] text-[var(--ink-2)] text-pretty">
-                Market range for {committed.term} commitments is{" "}
-                <span className="d3-figure text-[var(--ink)]">{committed.display}</span>.{" "}
-                {CONTRACT.body}
-              </p>
-            </div>
+      {/* --- committed + the full table ------------------------------------ */}
+      <div className="mt-14 grid gap-px border border-[var(--rule-strong)] bg-[var(--rule)] md:mt-20 lg:grid-cols-2">
+        <div className="bg-[var(--surface)] p-6 md:p-8">
+          <p className="d3-tag text-[var(--ink-3)]">Committed terms</p>
+          <p className="d3-display mt-3 text-[clamp(1.75rem,3.4vw,2.75rem)]" data-load data-load-from="300">
+            Below {RATE.display}
+          </p>
+          <p className="d3-body mt-3 max-w-[46ch] text-[0.875rem] text-[var(--ink-2)] text-pretty">
+            Market range for {committed.term} commitments is{" "}
+            <span className="d3-figure text-[var(--ink)]">{committed.display}</span>. {CONTRACT.body}
+          </p>
+        </div>
 
-            <div className="bg-[var(--surface)] p-6 md:p-8">
-              <p className="d3-tag text-[var(--ink-3)]">The full table</p>
-              <p className="d3-body mt-3 max-w-[44ch] text-[0.875rem] text-[var(--ink-2)] text-pretty">
-                Every rate, its verification status, the source URL, and the date we read it — with
-                the methodology written out. Last checked {formatAsOf(SITE.pricingAsOf)}.
-              </p>
-              <Link href="/d3/pricing" className="d3-btn d3-btn-ghost mt-6">
-                Open pricing
-                <span aria-hidden>→</span>
-              </Link>
-            </div>
-          </div>
+        <div className="bg-[var(--surface)] p-6 md:p-8">
+          <p className="d3-tag text-[var(--ink-3)]">The full table</p>
+          <p className="d3-body mt-3 max-w-[44ch] text-[0.875rem] text-[var(--ink-2)] text-pretty">
+            Every rate, its verification status, the source URL, and the date we read it — with the
+            methodology written out. Last checked {formatAsOf(SITE.pricingAsOf)}.
+          </p>
+          <Link href="/pricing" className="d3-btn d3-btn-ghost mt-6">
+            Open pricing
+            <span aria-hidden>→</span>
+          </Link>
         </div>
       </div>
     </section>

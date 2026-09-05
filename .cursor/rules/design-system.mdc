@@ -27,10 +27,14 @@ Hard rules, repeated here because they are the ones most often broken:
    The site root `/` is the page. Scene colour literals live only in
    `components/d3/palette.ts` and must match their `/* --token */` comment.
 
-6. **Run `npm run verify` before claiming done** — typecheck, lint, the 14-check
-   design audit, identity and schema. Then verify visually with
-   `npm run shot -- / <label> 1440 900` plus `--reduce` and `--nojs`, and check
-   `hasHorizontalOverflow` at 390 / 768 / 1440.
+6. **Run `npm run verify` before claiming done** — typecheck, lint, the 15-check
+ design audit, identity and schema. Then verify visually with
+ `HOST=localhost npm run shot -- / <label> 1440 900` plus `--reduce` and
+ `--nojs`, and check `hasHorizontalOverflow` at 390 / 768 / 1440.
+
+7. **Two grounds.** `.d3` is dark, `.d3-paper` is paper. Every new token is bound
+ in both. `--live` is the scroll-travelling colour; `--accent` is fixed and is
+ the only colour a control may be.
 
 When adding any control, produce its loading, empty, error and disabled states in
 the same pass. Ideal-state-only UI is not finished UI.

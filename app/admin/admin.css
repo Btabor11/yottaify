@@ -1,0 +1,1309 @@
+/* ---------------------------------------------------------------------------
+   THE NIGHT BOARD — the reservation desk.
+
+   The conceit: this is a hydrographic survey station, not a dashboard. A
+   reservation is a *sounding* — a reading taken from the dark. It has a
+   position in time, a magnitude, a confidence, and a depth. Depth is the
+   pipeline: a new lead floats at the surface, a contracted one sits on the
+   floor. The desk plots them, contours them, and logs them, and every
+   instrument on it is reading real rows rather than illustrating them.
+
+   That mapping is the reason the metaphor is allowed to exist. Nothing here
+   is drawn that is not measured.
+
+   Two grounds, one vocabulary, same semantic token names as the site so
+   shared utilities keep working — and a palette that belongs to nobody else,
+   so a screenshot of the desk can never be mistaken for the site.
+
+   Contrast, checked in scripts/audit.mjs against all four grounds
+   (--bg #070b12 · --surface #0e1520 · --surface-2 #141c2a · --surface-3 #1b2536):
+     worst ink is --ink-3 at 5.18:1 · --edge at 3.91:1 as a control border.
+--------------------------------------------------------------------------- */
+
+@property --sweep {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+/* The one number every drawn quantity on the desk is scaled by: a depth, a
+   ratio, a share. Written from the data by components/admin.
+
+   It has to inherit. Almost every reader of it is a pseudo-element — the fill
+   inside a bar, the bead in a row's gutter — and a pseudo-element is a child.
+   Declared `inherits: false` they all silently resolved to the initial 0 and
+   every bar on the board drew empty while looking deliberate. */
+@property --d {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+/* A second scale, for a mark that needs both a size and a position on the
+   depth ramp — the descent shelves want to be as wide as their count and as
+   blue as their stage. */
+@property --o {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+.admin {
+  /* --- grounds: an unlit sea, four steps of it ------------------------- */
+  --bg: #070b12;
+  --surface: #0e1520;
+  --surface-2: #141c2a;
+  --surface-3: #1b2536;
+
+  /* --- inks, in order of emphasis -------------------------------------- */
+  --ink: #e8f4f2;
+  --ink-2: #9ab8c4;
+  --ink-3: #7d9aaa;
+
+  /* --- decoration. Never text. ----------------------------------------- */
+  --rule: #17202e;
+  --rule-strong: #24314a;
+
+  /* --- the only border an interactive control may carry ---------------- */
+  --edge: #6a8494;
+
+  /* --- phosphor: the one colour a control may be ----------------------- */
+  --accent: #3ee8d0;
+  --accent-2: #7ef0dc;
+  --accent-ink: #041014;
+
+  /* --- status. Colour is data here, and never decoration. -------------- */
+  --caution: #f0c85a;
+  --hot: #ff9a62;
+  --alarm: #ff8a8a;
+
+  /* --- the depth scale. Shallow is phosphor, deep is cold blue. -------- */
+  --shoal: #3ee8d0;
+  --deep: #6ec8ff;
+
+  /* A sounding that is finished with: closed, withdrawn or held. Off the
+     depth scale entirely, so it reads as slack water rather than as a stage. */
+  --spent: #61798c;
+
+  --focus: #7ef0dc;
+
+  --fd: var(--admin-display);
+  --fm: var(--admin-mono);
+
+  /* Sonar period. One sweep every eight seconds — a heartbeat you notice
+     twice and then stop seeing, which is the correct amount. */
+  --sonar: 8s;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-mech: cubic-bezier(0.5, 0, 0.1, 1);
+
+  position: relative;
+  isolation: isolate;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--fm);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color-scheme: dark;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------------------------------------------------------------------------
+   ATMOSPHERE
+
+   Three stacked layers behind everything, all decorative, all pointer-inert:
+   the chart grid (a survey lattice), the depth wash (a lamp over the table),
+   and grain. Painted on a pseudo-element so no element in the tree carries a
+   background it does not own.
+--------------------------------------------------------------------------- */
+
+.admin::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--rule) 1px, transparent 1px),
+    linear-gradient(90deg, var(--rule) 1px, transparent 1px);
+  background-size:
+    100% 4.5rem,
+    4.5rem 100%;
+  mask-image: radial-gradient(120% 90% at 50% 0%, #000 0%, transparent 78%);
+  opacity: 0.55;
+}
+
+.admin::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(70% 46% at 50% -8%, color-mix(in oklab, var(--shoal) 12%, transparent) 0%, transparent 70%),
+    radial-gradient(50% 40% at 96% 4%, color-mix(in oklab, var(--caution) 7%, transparent) 0%, transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E");
+  background-size:
+    100% 100%,
+    100% 100%,
+    140px 140px;
+  mix-blend-mode: screen;
+  opacity: 0.5;
+}
+
+.admin a {
+  color: inherit;
+  text-underline-offset: 0.2em;
+}
+.admin a:hover {
+  color: var(--accent);
+}
+
+.admin :focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 1px;
+}
+
+/* ---------------------------------------------------------------------------
+   VOICES
+
+   Two faces, four jobs. Fraunces reads — it is the only thing on the desk
+   with a soft edge, so a heading feels written rather than printed. Azeret
+   measures. Anything that is a number is Azeret, always.
+--------------------------------------------------------------------------- */
+
+.adm-display {
+  font-family: var(--fd);
+  font-variation-settings:
+    "SOFT" 40,
+    "WONK" 1,
+    "opsz" 40;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  line-height: 1.06;
+  color: var(--ink);
+}
+
+/* Small-caps instrument label. The desk's connective tissue. */
+.adm-tag {
+  font-family: var(--fm);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* A figure that wants to be read across the room. */
+.adm-figure {
+  font-family: var(--fm);
+  font-weight: 300;
+  font-size: clamp(1.5rem, 1.1rem + 1.5vw, 2.125rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.adm-unit {
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+}
+
+/* ---------------------------------------------------------------------------
+   PLATE — the instrument primitive.
+
+   Every readout on the desk sits on one of these: a milled panel with four
+   registration corners and a hairline top edge that catches the lamp. The
+   corners are drawn, not imaged, so they stay crisp at any density.
+--------------------------------------------------------------------------- */
+
+.adm-plate {
+  position: relative;
+  background:
+    linear-gradient(180deg, color-mix(in oklab, var(--surface-2) 88%, var(--shoal) 4%) 0%, var(--surface) 62%);
+  border: 1px solid var(--rule-strong);
+  padding: 0.9375rem 1.0625rem 1.0625rem;
+}
+
+/* The lamp line: brighter where the light falls, fading across. */
+.adm-plate::before {
+  content: "";
+  position: absolute;
+  inset: -1px -1px auto;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklab, var(--shoal) 55%, transparent) 22%,
+    color-mix(in oklab, var(--shoal) 12%, transparent) 70%,
+    transparent 100%
+  );
+}
+
+/* Registration marks, one drawn corner repeated four ways. */
+.adm-plate::after {
+  content: "";
+  position: absolute;
+  inset: 0.3125rem;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--edge), var(--edge)),
+    linear-gradient(var(--edge), var(--edge)),
+    linear-gradient(var(--edge), var(--edge)),
+    linear-gradient(var(--edge), var(--edge));
+  background-size:
+    0.4375rem 1px,
+    1px 0.4375rem,
+    0.4375rem 1px,
+    1px 0.4375rem;
+  background-position:
+    left top,
+    left top,
+    right bottom,
+    right bottom;
+  background-repeat: no-repeat;
+  opacity: 0.5;
+}
+
+.adm-plate-flush {
+  padding: 0;
+}
+.adm-plate-flush::after {
+  content: none;
+}
+
+/* A plate that is also a link. The whole panel answers the hand. */
+a.adm-plate:hover,
+.adm-plate-live:hover {
+  border-color: color-mix(in oklab, var(--accent) 45%, var(--rule-strong));
+}
+
+/* ---------------------------------------------------------------------------
+   CONTROLS
+
+   --edge is the only border allowed here. Every control states its disabled
+   state, and the focus ring is never removed.
+--------------------------------------------------------------------------- */
+
+.adm-input,
+.adm-select,
+.adm-textarea {
+  width: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  border: 1px solid var(--edge);
+  padding: 0.5rem 0.6875rem;
+  font: inherit;
+  font-size: 0.8125rem;
+  border-radius: 0;
+  transition:
+    border-color 160ms var(--ease-out),
+    background-color 160ms var(--ease-out);
+}
+.adm-input:hover,
+.adm-select:hover,
+.adm-textarea:hover {
+  border-color: var(--accent);
+}
+.adm-input::placeholder,
+.adm-textarea::placeholder {
+  color: var(--ink-3);
+}
+.adm-textarea {
+  min-height: 5.5rem;
+  resize: vertical;
+  line-height: 1.6;
+}
+.adm-select {
+  appearance: none;
+  padding-right: 1.875rem;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--ink-2) 50%),
+    linear-gradient(135deg, var(--ink-2) 50%, transparent 50%);
+  background-position:
+    calc(100% - 0.9375rem) 55%,
+    calc(100% - 0.625rem) 55%;
+  background-size:
+    0.3125rem 0.3125rem,
+    0.3125rem 0.3125rem;
+  background-repeat: no-repeat;
+}
+.adm-input:disabled,
+.adm-select:disabled,
+.adm-textarea:disabled,
+.adm-btn:disabled,
+.adm-btn[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: var(--rule-strong);
+}
+.adm-input:disabled:hover,
+.adm-select:disabled:hover,
+.adm-textarea:disabled:hover {
+  border-color: var(--rule-strong);
+}
+
+.adm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid var(--edge);
+  background: var(--surface-2);
+  color: var(--ink);
+  padding: 0.5rem 0.9375rem;
+  font: inherit;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 0;
+  white-space: nowrap;
+  transition:
+    color 160ms var(--ease-out),
+    border-color 160ms var(--ease-out),
+    background-color 160ms var(--ease-out);
+}
+.adm-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 8%, var(--surface-2));
+}
+.adm-btn-solid {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+.adm-btn-solid:hover {
+  background: var(--accent-2);
+  border-color: var(--accent-2);
+  color: var(--accent-ink);
+}
+.adm-btn-danger:hover {
+  border-color: var(--alarm);
+  color: var(--alarm);
+  background: color-mix(in oklab, var(--alarm) 8%, var(--surface-2));
+}
+/* In flight. The label holds still and a hairline runs under it, so the
+   button says "working" without changing size. Sits above the disabled
+   dimming, because a control that is busy is not a control that is off. */
+.adm-btn[data-pending] {
+  position: relative;
+  overflow: hidden;
+  opacity: 0.8;
+  cursor: progress;
+}
+.adm-btn[data-pending]::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 2px;
+  background: currentColor;
+  transform-origin: left;
+  animation: adm-run 1.1s var(--ease) infinite;
+}
+@keyframes adm-run {
+  0% {
+    transform: scaleX(0) translateX(0);
+  }
+  55% {
+    transform: scaleX(1) translateX(0);
+  }
+  100% {
+    transform: scaleX(0) translateX(100%);
+  }
+}
+
+/* Filter chips — a segmented set that is really a row of links, so the
+   board's whole state stays in the URL and survives JavaScript being off. */
+.adm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  border: 1px solid var(--rule-strong);
+  background: var(--surface);
+  color: var(--ink-2);
+  padding: 0.3125rem 0.625rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  transition:
+    color 140ms var(--ease-out),
+    border-color 140ms var(--ease-out);
+}
+.adm-chip:hover {
+  color: var(--ink);
+  border-color: var(--edge);
+}
+.adm-chip[aria-current="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 10%, var(--surface));
+}
+.adm-chip[aria-current="true"]:hover {
+  color: var(--accent);
+}
+.adm-chip-n {
+  font-size: 0.625rem;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.adm-chip[aria-current="true"] .adm-chip-n {
+  color: inherit;
+}
+
+/* ---------------------------------------------------------------------------
+   MARKS — status, tier, depth.
+
+   Colour is data. Every mark also carries text, and the depth bead in front
+   of a status is positioned by the same number that drives the chart, so the
+   two can never disagree.
+--------------------------------------------------------------------------- */
+
+.adm-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  padding: 0.125rem 0.4375rem;
+  border: 1px solid var(--rule-strong);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+/* The bead: one dot on a four-step scale, drawn at the row's own depth. */
+.adm-bead {
+  width: 0.375rem;
+  height: 0.375rem;
+  flex: none;
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--deep), var(--shoal) calc((1 - var(--d)) * 100%));
+}
+
+.adm-mark[data-tier="A"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.adm-mark[data-tier="B"] {
+  border-color: var(--edge);
+  color: var(--ink);
+}
+.adm-mark[data-status="new"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.adm-mark[data-status="live"],
+.adm-mark[data-status="contracted"] {
+  border-color: color-mix(in oklab, var(--deep) 70%, var(--rule-strong));
+  color: var(--deep);
+}
+.adm-mark[data-status="declined"],
+.adm-mark[data-status="withdrawn"],
+.adm-mark[data-status="spam"] {
+  color: var(--ink-3);
+}
+.adm-mark[data-tone="caution"] {
+  border-color: color-mix(in oklab, var(--caution) 60%, var(--rule-strong));
+  color: var(--caution);
+}
+.adm-mark[data-tone="alarm"] {
+  border-color: color-mix(in oklab, var(--alarm) 60%, var(--rule-strong));
+  color: var(--alarm);
+}
+
+/* ---------------------------------------------------------------------------
+   THE LOG — the board's table.
+
+   A survey log, not a spreadsheet. Each row carries a depth gutter on its
+   left edge whose bead sits at the row's pipeline depth, so the shape of the
+   whole pipeline is legible down the side of the table before a single cell
+   is read.
+--------------------------------------------------------------------------- */
+
+.adm-log {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+.adm-log caption {
+  caption-side: top;
+  text-align: left;
+}
+.adm-log th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  text-align: left;
+  font-weight: 500;
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding: 0.5625rem 0.75rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--rule-strong);
+  white-space: nowrap;
+}
+.adm-log th:first-child,
+.adm-log td:first-child {
+  padding-left: 1.125rem;
+}
+/* A column heading is a control, so it looks like one on approach and it
+   keeps a focus ring. The mark holds its space in every state — a heading
+   that grows by a glyph when you sort it makes the whole row of names
+   shuffle sideways. */
+.adm-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  color: inherit;
+  text-decoration: none;
+  transition: color var(--fast) var(--ease);
+}
+.adm-sort:hover {
+  color: var(--ink-2);
+}
+.adm-sort[data-on] {
+  color: var(--ink);
+}
+.adm-sort:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+.adm-sort-mark {
+  font-size: 0.5rem;
+  line-height: 1;
+  color: var(--rule-strong);
+  transition: color var(--fast) var(--ease);
+}
+.adm-sort:hover .adm-sort-mark {
+  color: var(--ink-3);
+}
+.adm-sort[data-on] .adm-sort-mark {
+  color: var(--accent);
+}
+.adm-log td {
+  padding: 0.6875rem 0.75rem;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+.adm-log tbody tr {
+  position: relative;
+}
+.adm-log tbody tr:hover td,
+.adm-log tbody tr:focus-within td {
+  background: var(--surface-2);
+}
+/* Held: this row is the one the sounding field is pointing at, or the one the
+   pointer is over. A bar in the gutter rather than a brighter fill, so the
+   mark survives the row also being hovered and reads at a glance down a long
+   log. */
+.adm-log tbody tr[data-held] td {
+  background: var(--surface-2);
+}
+.adm-log tbody tr[data-held] td:first-child {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+/* The same state on the still's beads, for the machines that never load the
+   scene. `r` is not reliably animatable, so the ring is a stroke. */
+.adm-chart [data-held] .adm-bead {
+  stroke-width: 3;
+  stroke-opacity: 0.55;
+}
+
+/* A triage card the field is holding, or the pointer is over. */
+.adm-card {
+  box-shadow: inset 0 0 0 0 var(--accent);
+  transition:
+    background var(--fast) var(--ease),
+    box-shadow var(--fast) var(--ease);
+}
+.adm-card[data-held] {
+  background: var(--surface-2);
+  box-shadow: inset 2px 0 0 0 var(--accent);
+}
+
+/* Depth gutter. A full-height hairline with the row's bead on it. */
+.adm-log td:first-child::before {
+  content: "";
+  position: absolute;
+  left: 0.4375rem;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--rule-strong);
+}
+.adm-log td:first-child::after {
+  content: "";
+  position: absolute;
+  left: 0.25rem;
+  top: calc(0.75rem + var(--d) * 1.125rem);
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--deep), var(--shoal) calc((1 - var(--d)) * 100%));
+}
+.adm-log tbody tr:hover td:first-child::after {
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--shoal) 22%, transparent);
+}
+
+.adm-ref {
+  color: var(--accent);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+.adm-cell-strong {
+  color: var(--ink);
+}
+.adm-cell-quiet {
+  color: var(--ink-2);
+}
+.adm-cell-faint {
+  color: var(--ink-3);
+}
+
+/* Magnitude bar inside a cell: the request's size, drawn to scale against
+   the largest open request on the board. */
+.adm-bar {
+  position: relative;
+  display: block;
+  height: 2px;
+  margin-top: 0.3125rem;
+  background: var(--rule-strong);
+}
+.adm-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--d) * 100%);
+  min-width: 2px;
+  background: var(--shoal);
+}
+/* A row that is finished with should not draw a bright bar. */
+.adm-log tr[data-spent="true"] .adm-bar::after {
+  background: var(--spent);
+}
+.adm-log tr[data-spent="true"] td:first-child::after {
+  background: var(--spent);
+}
+
+/* ---------------------------------------------------------------------------
+   INSTRUMENTS
+--------------------------------------------------------------------------- */
+
+/* The live pip. A sonar return: a dot with a ring leaving it. */
+.adm-pip {
+  position: relative;
+  display: inline-block;
+  width: 0.4375rem;
+  height: 0.4375rem;
+  flex: none;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.adm-pip::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  animation: adm-ring var(--sonar) var(--ease-out) infinite;
+}
+.adm-pip[data-state="down"] {
+  background: var(--alarm);
+}
+.adm-pip[data-state="down"]::before {
+  border-color: var(--alarm);
+}
+
+@keyframes adm-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  22% {
+    transform: scale(3.6);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(3.6);
+    opacity: 0;
+  }
+}
+
+/* Sparkline / histogram column set. Bars are sized from data by the
+   component; this only says what a bar looks like. */
+.adm-spark {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 4.75rem;
+  border-bottom: 1px solid var(--rule-strong);
+}
+.adm-spark-col {
+  flex: 1 1 0;
+  min-width: 2px;
+  height: calc(max(var(--d), 0.04) * 100%);
+  background: color-mix(in oklab, var(--shoal) 55%, var(--rule-strong));
+  transition: background-color 200ms var(--ease-out);
+}
+.adm-spark-col[data-live="true"] {
+  background: var(--shoal);
+}
+.adm-spark:hover .adm-spark-col {
+  background: color-mix(in oklab, var(--shoal) 75%, var(--rule-strong));
+}
+
+/* Horizontal distribution row: label, rule, count. The rule is the bar. */
+.adm-dist {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.25rem 0;
+}
+.adm-dist + .adm-dist {
+  border-top: 1px solid var(--rule);
+}
+.adm-dist dt {
+  min-width: 0;
+  color: var(--ink-2);
+}
+.adm-dist-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.adm-dist dd {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}
+.adm-dist-track {
+  display: block;
+  height: 2px;
+  margin-top: 0.25rem;
+  background: var(--rule-strong);
+}
+.adm-dist-track::after {
+  content: "";
+  display: block;
+  height: 100%;
+  width: calc(var(--d) * 100%);
+  min-width: 2px;
+  background: var(--shoal);
+}
+
+/* An instrument keeps its divisions whether or not there is a reading on
+   them. Empty slots hold the plate's height steady across a row of them, and
+   say "nothing here" rather than leaving the eye to wonder where the rest
+   went. */
+/* A blank division draws its rule and nothing else. A row of faint dashes
+   reads as data the eye has to dismiss; an empty division reads as scale. */
+.adm-dist[data-empty="true"] dt {
+  min-height: 1.5rem;
+}
+.adm-dist[data-empty="true"] .adm-dist-name {
+  white-space: normal;
+  color: var(--ink-3);
+}
+
+/* A decorative hairline between two facts on one line. */
+.adm-sep {
+  display: inline-block;
+  width: 1px;
+  height: 0.75em;
+  margin: 0 0.4375rem;
+  vertical-align: -0.05em;
+  background: var(--rule-strong);
+}
+.adm-dist[data-empty="true"] .adm-dist-track::after {
+  content: none;
+}
+
+/* The descent: the pipeline as a vertical section. Each stage is a step
+   further down, and the width of its shelf is how many rows are sitting on
+   it right now. */
+.adm-descent {
+  display: grid;
+  gap: 0;
+}
+.adm-descent-step {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.375rem 0;
+  border-top: 1px solid var(--rule);
+}
+.adm-descent-step:first-child {
+  border-top: 0;
+}
+.adm-descent-term {
+  display: grid;
+  grid-template-columns: 1.75rem minmax(0, 1fr);
+  gap: 0 0.625rem;
+  min-width: 0;
+}
+.adm-descent-depth {
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-size: 0.625rem;
+  color: var(--ink-3);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.adm-descent-shelf {
+  position: relative;
+  height: 0.875rem;
+  display: flex;
+  align-items: center;
+}
+.adm-descent-shelf::before {
+  content: "";
+  position: absolute;
+  inset: 50% 0 auto;
+  height: 1px;
+  background: var(--rule-strong);
+}
+.adm-descent-shelf::after {
+  content: "";
+  position: relative;
+  height: 0.4375rem;
+  width: calc(var(--d) * 100%);
+  min-width: 0.125rem;
+  background: color-mix(in oklab, var(--deep), var(--shoal) calc((1 - var(--o)) * 100%));
+}
+.adm-descent-step[data-empty="true"] .adm-descent-shelf::after {
+  background: var(--rule-strong);
+}
+.adm-descent-label {
+  display: block;
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.adm-descent-step[data-empty="true"] .adm-descent-label {
+  color: var(--ink-3);
+}
+.adm-descent-n {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  min-width: 1.5rem;
+  text-align: right;
+  margin: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   THE CHART — the sounding field's still.
+
+   Server-rendered SVG. This is the real picture: every reservation on the
+   board is plotted on it before a line of JavaScript runs. The WebGL scene
+   that may replace it draws the same points from the same numbers.
+--------------------------------------------------------------------------- */
+
+.adm-chart {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.adm-chart-hull {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+  border: 1px solid var(--rule-strong);
+}
+
+/* Axis labels, placed by the projection and following the plane's slope. */
+.adm-chart-depth-tick,
+.adm-chart-time-tick {
+  position: absolute;
+  font-size: 0.5625rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.adm-chart-depth-tick {
+  transform: translate(calc(-100% - 0.75rem), -50%);
+}
+/* The hairline joining a label to the edge of the plane it names. */
+.adm-chart-depth-tick::after {
+  content: "";
+  position: absolute;
+  right: -0.625rem;
+  top: 50%;
+  width: 0.375rem;
+  height: 1px;
+  background: var(--edge);
+}
+/* Time ticks sit just inside the plane's near corners rather than centred on
+   them, so the oldest tick and the "floor" depth label never share a pixel. */
+.adm-chart-time-tick {
+  transform: translate(0.625rem, 1.125rem);
+}
+.adm-chart-time-tick[data-end="true"] {
+  transform: translate(calc(-100% - 0.625rem), 1.125rem);
+}
+
+/* Under about a phone's width there is no room to the left of the plane for
+   a stage name, and half-clipped words are worse than none. The legend under
+   the chart still says which end is which. */
+@media (max-width: 40rem) {
+  .adm-chart-depth-tick {
+    display: none;
+  }
+}
+
+/* The sweep. A returning signal passing over the plot, and nothing more —
+   at full strength it washed the beads out, which is the opposite of what an
+   instrument should do to its own reading. */
+.adm-chart-sweep {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    transparent 42%,
+    color-mix(in oklab, var(--shoal) 7%, transparent) 49%,
+    color-mix(in oklab, var(--shoal) 13%, transparent) 50%,
+    transparent 58%
+  );
+  transform: translateX(-100%);
+  animation: adm-sweep var(--sonar) cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes adm-sweep {
+  0% {
+    transform: translateX(-105%);
+  }
+  55% {
+    transform: translateX(105%);
+  }
+  100% {
+    transform: translateX(105%);
+  }
+}
+
+/* The label on a held sounding. Positioned from the frame loop, so it stays
+   on its bead while the board tilts. Hidden — not transparent — when nothing
+   is held, so it can never sit invisibly over the plot swallowing clicks. */
+.adm-tip {
+  position: absolute;
+  display: none;
+  transform: translate(-50%, calc(-100% - 0.875rem));
+  pointer-events: none;
+  z-index: 2;
+  min-width: 9rem;
+  padding: 0.375rem 0.625rem;
+  background: var(--surface-3);
+  border: 1px solid var(--edge);
+  box-shadow: 0 0.5rem 1.5rem color-mix(in oklab, var(--bg) 80%, transparent);
+}
+.adm-tip[data-held="true"] {
+  display: block;
+}
+/* Near the top of the frame there is no room above the bead, so the label
+   drops below it and the pointer flips with it. */
+.adm-tip[data-under="true"] {
+  transform: translate(-50%, 0.875rem);
+}
+/* `--tip-x` is where the bead actually is, once the label has been slid
+   inboard to stay in frame. A label that points at nothing is a label that
+   has to be guessed at. */
+.adm-tip::after {
+  content: "";
+  position: absolute;
+  left: var(--tip-x, 50%);
+  bottom: -0.3125rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  transform: translateX(-50%) rotate(45deg);
+  background: var(--surface-3);
+  border-right: 1px solid var(--edge);
+  border-bottom: 1px solid var(--edge);
+}
+.adm-tip[data-under="true"]::after {
+  bottom: auto;
+  top: -0.3125rem;
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 1px solid var(--edge);
+  border-top: 1px solid var(--edge);
+}
+.adm-tip-ref {
+  font-size: 0.5625rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.adm-tip-name {
+  color: var(--ink);
+  white-space: nowrap;
+}
+.adm-tip-meta {
+  font-size: 0.6875rem;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------------
+   THE DOSSIER — one sounding, read in full.
+--------------------------------------------------------------------------- */
+
+/* The gauge: this row's own descent. The track fills to where it has got to,
+   and the stage it is on is the only one in phosphor. */
+.adm-gauge {
+  position: relative;
+  padding-left: 1.125rem;
+  margin: 0;
+}
+.adm-gauge::before {
+  content: "";
+  position: absolute;
+  left: 0.1875rem;
+  top: 0.625rem;
+  bottom: 0.625rem;
+  width: 1px;
+  background: var(--rule-strong);
+}
+.adm-gauge::after {
+  content: "";
+  position: absolute;
+  left: 0.125rem;
+  top: 0.625rem;
+  height: calc(max(var(--d), 0.001) * (100% - 1.25rem));
+  width: 3px;
+  background: linear-gradient(180deg, var(--shoal), var(--deep));
+}
+.adm-gauge-step {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.1875rem 0;
+  color: var(--ink-3);
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+}
+.adm-gauge-step::before {
+  content: "";
+  position: absolute;
+  left: -1.03125rem;
+  top: 0.5rem;
+  width: 0.3125rem;
+  height: 0.3125rem;
+  border-radius: 50%;
+  background: var(--rule-strong);
+  outline: 2px solid var(--surface);
+}
+.adm-gauge-step[data-done="true"] {
+  color: var(--ink-2);
+}
+.adm-gauge-step[data-done="true"]::before {
+  background: var(--deep);
+}
+.adm-gauge-step[data-here="true"] {
+  color: var(--accent);
+}
+.adm-gauge-step[data-here="true"]::before {
+  background: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 22%, transparent);
+}
+.adm-gauge-depth {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+
+/* Observation chips. Facts read off columns, not conclusions. */
+.adm-obs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.adm-obs li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  border: 1px solid var(--rule-strong);
+  border-left: 2px solid var(--edge);
+  background: var(--surface-2);
+  padding: 0.1875rem 0.5rem;
+  color: var(--ink-2);
+  font-size: 0.6875rem;
+}
+.adm-obs li[data-tone="good"] {
+  border-left-color: var(--accent);
+  color: var(--ink);
+}
+.adm-obs li[data-tone="watch"] {
+  border-left-color: var(--caution);
+}
+
+.adm-dl {
+  display: grid;
+  grid-template-columns: minmax(8.5rem, 11rem) minmax(0, 1fr);
+  column-gap: 1.25rem;
+  align-items: baseline;
+  padding: 0.34375rem 0;
+  border-top: 1px solid var(--rule);
+  margin: 0;
+}
+.adm-dl:first-of-type {
+  border-top: 0;
+}
+.adm-dl dt {
+  color: var(--ink-3);
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+}
+.adm-dl dd {
+  color: var(--ink);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.adm-dl[data-empty="true"] dd {
+  color: var(--ink-3);
+}
+@media (max-width: 40rem) {
+  .adm-dl {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 0.0625rem;
+    padding-bottom: 0.5rem;
+  }
+}
+
+/* The timeline: an append-only log read as a core sample. */
+.adm-core {
+  position: relative;
+  margin: 0;
+  padding: 0 0 0 1.0625rem;
+  list-style: none;
+}
+.adm-core::before {
+  content: "";
+  position: absolute;
+  left: 0.1875rem;
+  top: 0.4375rem;
+  bottom: 0.4375rem;
+  width: 1px;
+  background: var(--rule-strong);
+}
+.adm-core-entry {
+  position: relative;
+  display: grid;
+  grid-template-columns: 9.5rem minmax(0, 1fr);
+  gap: 0.25rem 1rem;
+  padding: 0.3125rem 0;
+}
+.adm-core-entry::before {
+  content: "";
+  position: absolute;
+  left: -1rem;
+  top: 0.6875rem;
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: var(--rule-strong);
+  outline: 3px solid var(--bg);
+}
+.adm-core-entry[data-key="true"]::before {
+  background: var(--accent);
+}
+@media (max-width: 44rem) {
+  .adm-core-entry {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   NOTICES
+--------------------------------------------------------------------------- */
+
+.adm-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  border: 1px solid var(--rule-strong);
+  border-left-width: 2px;
+  background: var(--surface);
+  padding: 0.625rem 0.875rem;
+  color: var(--ink-2);
+}
+.adm-notice[data-tone="ok"] {
+  border-left-color: var(--accent);
+  color: var(--accent);
+}
+.adm-notice[data-tone="caution"] {
+  border-left-color: var(--caution);
+  color: var(--caution);
+}
+.adm-notice[data-tone="alarm"] {
+  border-left-color: var(--alarm);
+  color: var(--alarm);
+}
+
+/* ---------------------------------------------------------------------------
+   MOTION
+
+   Base state is the final state. Everything animates *from* an offset with
+   `backwards`, so with animation disabled — or before it starts — the page is
+   already correct. Nothing is revealed by motion alone.
+--------------------------------------------------------------------------- */
+
+@keyframes adm-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
+
+@keyframes adm-wake {
+  from {
+    opacity: 0;
+  }
+}
+
+.adm-rise {
+  animation: adm-rise 620ms var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+.adm-wake {
+  animation: adm-wake 900ms var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin .adm-chart-sweep,
+  .admin .adm-pip::before {
+    animation: none;
+  }
+  .admin .adm-chart-sweep {
+    display: none;
+  }
+  /* The global reset would run the pending hairline to its end frame in a
+     millisecond and leave the button looking idle while it is not. A busy
+     control still has to say so, so here it says so by standing still. */
+  .admin .adm-btn[data-pending]::after {
+    animation: none;
+    transform: scaleX(1);
+  }
+}

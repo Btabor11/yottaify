@@ -1,5 +1,5 @@
 /**
- * Does the scroll-driven palette still travel, and does it step visibly?
+ * Does the scroll-driven live colour still travel, and does it step visibly?
  *
  *   node scripts/drift.mjs
  *
@@ -14,13 +14,14 @@
 import { assertHardware, launchGpu } from "./launch.mjs";
 
 const PORT = process.env.PORT ?? "4320";
-const base = `http://127.0.0.1:${PORT}`;
+const HOST = process.env.HOST ?? "127.0.0.1";
+const base = `http://${HOST}:${PORT}`;
 
 const browser = await launchGpu();
 await assertHardware(browser);
 const page = await browser.newPage();
 await page.setViewportSize({ width: 1440, height: 900 });
-await page.goto(`${base}/d3`, { waitUntil: "load" });
+await page.goto(`${base}/`, { waitUntil: "load" });
 await page.waitForTimeout(1500);
 
 const samples = [];
@@ -38,7 +39,7 @@ for (let i = 0; i <= 10; i++) {
     // A custom property reads back as its unresolved token, so paint it onto a
     // throwaway element to get the colour the screen actually shows.
     const probe = document.createElement("span");
-    probe.style.color = "var(--accent)";
+    probe.style.color = "var(--live)";
     probe.style.position = "fixed";
     root.appendChild(probe);
     const accent = getComputedStyle(probe).color;
@@ -48,22 +49,40 @@ for (let i = 0; i <= 10; i++) {
   samples.push({ frac, ...s });
 }
 
-// Rough sRGB distance between neighbours — enough to catch visible banding.
+// The browser resolves the color-mix to oklch(L C H). The thing worth
+// measuring is that hue keeps moving the long way round (ember → magenta →
+// blue → teal) and never doubles back, and that lightness stays in the band
+// the audit proved legible.
 const parse = (c) => {
   const m = c.match(/[-\d.]+/g);
   return m ? m.slice(0, 3).map(Number) : [0, 0, 0];
 };
-let worst = 0;
-for (let i = 1; i < samples.length; i++) {
-  const a = parse(samples[i - 1].accent);
-  const b = parse(samples[i].accent);
-  worst = Math.max(worst, Math.hypot(...a.map((v, j) => v - b[j])));
+let hueSpan = 0;
+let reversed = false;
+let prevH = null;
+for (const s of samples) {
+  const [, , h] = parse(s.accent);
+  if (prevH !== null && h !== prevH) {
+    // Going the long way from ~47° means hue decreases (wrapping past 0).
+    let d = h - prevH;
+    if (d > 180) d -= 360;
+    if (d < -180) d += 360;
+    if (d > 0.5) reversed = true;
+    hueSpan += Math.abs(d);
+  }
+  prevH = h;
 }
+const L = samples.map((s) => parse(s.accent)[0]);
 
-console.log("\n  /d3 accent through the document\n");
-console.log("  scroll   phase   accent");
+console.log("\n  --live through the story\n");
+console.log("  scroll   phase   live");
 for (const s of samples) console.log(`  ${(s.frac * 100).toFixed(0).padStart(5)}%  ${s.phase.padStart(6)}   ${s.accent}`);
 console.log(`\n  travels: ${samples[0].accent}  ->  ${samples.at(-1).accent}`);
-console.log(`  largest gap between the sampled tenths: ${worst.toFixed(3)}\n`);
+console.log(`  hue travelled: ${hueSpan.toFixed(0)}°  ${reversed ? "(REVERSED — went the short way somewhere)" : "(monotonic, the long way round)"}`);
+console.log(`  lightness band: ${Math.min(...L).toFixed(3)} – ${Math.max(...L).toFixed(3)}\n`);
+if (hueSpan < 180) {
+  console.error("  the live colour did not travel: check that the story section carries data-pin-host");
+  process.exitCode = 1;
+}
 
 await browser.close();

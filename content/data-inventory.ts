@@ -45,7 +45,8 @@ export const RETENTION: Record<Exclude<DataSource, "pipeline">, number | null> =
  * says we will *tell you what we hold* and does not promise deletion.
  */
 export const DELETION = {
-  implemented: false as boolean,
+  /** app/admin/actions.ts → deleteReservation. Erases the row and its audit trail. */
+  implemented: true as boolean,
 } as const;
 
 // --- inventory ------------------------------------------------------------------

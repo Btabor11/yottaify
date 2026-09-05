@@ -10,6 +10,7 @@
  */
 
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { driveScroll, invalidateScroll, tickScroll } from "./scroll-runtime";
 
 /** SSR-safe layout effect. */
 export const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
@@ -66,6 +67,14 @@ export interface ScrollFeel {
  * Skipped entirely under reduced motion — hijacking scroll is exactly what
  * that preference is asking us not to do. Also syncs Lenis to GSAP's ticker
  * so ScrollTrigger and Lenis do not fight over the frame.
+ *
+ * And, once it is up, Lenis drives the scroll runtime. Order inside the one
+ * frame is: Lenis writes the scroll position → ScrollTrigger updates → every
+ * scroll-driven value on the page is measured and painted. Waking that work
+ * from a `scroll` listener instead, as it used to be, put it a frame behind
+ * the position that caused it, which on a page where the colour, the hero
+ * scrub and the particle field all follow the scroll is the whole difference
+ * between tracking the hand and lagging it.
  */
 export function useLenis(enabled = true, feel: ScrollFeel = {}): void {
   const reduced = useReducedMotion();
@@ -87,6 +96,13 @@ export function useLenis(enabled = true, feel: ScrollFeel = {}): void {
 
       gsap.registerPlugin(ScrollTrigger);
 
+      // Anchor targets clear the fixed header with `scroll-margin-top`, which
+      // native anchor scrolling honours and `lenis.scrollTo` does not. Read
+      // the real computed value off the one target every page is required to
+      // have, so the two can never drift apart.
+      const main = document.getElementById("main");
+      const clearance = main ? parseFloat(getComputedStyle(main).scrollMarginTop) || 0 : 0;
+
       const lenis = new Lenis({
         duration,
         // Gentle exponential ease-out. Long tail, no rubber-band overshoot.
@@ -94,16 +110,28 @@ export function useLenis(enabled = true, feel: ScrollFeel = {}): void {
         smoothWheel: true,
         wheelMultiplier,
         touchMultiplier,
+        // Lenis takes the anchors. The stylesheet used to hand them to native
+        // smooth-scroll, which fought Lenis for the scroll position.
+        anchors: { offset: -clearance },
       });
 
       lenis.on("scroll", ScrollTrigger.update);
 
-      const tick = (time: number) => lenis.raf(time * 1000);
+      const releaseDrive = driveScroll();
+      const tick = (time: number) => {
+        lenis.raf(time * 1000);
+        tickScroll(time * 1000);
+      };
       gsap.ticker.add(tick);
       gsap.ticker.lagSmoothing(0);
 
+      // Pinning the hero changes the document's height under everything that
+      // has measured it.
+      invalidateScroll();
+
       cleanup = () => {
         gsap.ticker.remove(tick);
+        releaseDrive();
         lenis.destroy();
       };
     })();
@@ -129,10 +157,7 @@ export function useInView<T extends Element>(
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (typeof IntersectionObserver === "undefined") {
-      setInView(true);
-      return;
-    }
+    if (typeof IntersectionObserver === "undefined") return;
 
     const io = new IntersectionObserver(
       ([entry]) => {
@@ -145,26 +170,35 @@ export function useInView<T extends Element>(
     return () => io.disconnect();
   }, [rootMargin, threshold, once]);
 
-  return [ref, inView];
+  // No observer (very old browsers): treat as always in view without a
+  // cascading setState. SSR and modern clients keep the observed value.
+  const noObserver = typeof window !== "undefined" && typeof IntersectionObserver === "undefined";
+  return [ref, noObserver || inView];
+}
+
+let webglSnapshot: boolean | undefined;
+
+function subscribeWebGL(_onChange: () => void): () => void {
+  return () => {};
+}
+
+function getWebGLSnapshot(): boolean {
+  if (webglSnapshot !== undefined) return webglSnapshot;
+  try {
+    const canvas = document.createElement("canvas");
+    const gl = canvas.getContext("webgl2") ?? canvas.getContext("webgl");
+    webglSnapshot = Boolean(gl);
+    // Release the context immediately; we only wanted the answer.
+    (gl as WebGLRenderingContext | null)?.getExtension("WEBGL_lose_context")?.loseContext();
+  } catch {
+    webglSnapshot = false;
+  }
+  return webglSnapshot;
 }
 
 /** WebGL availability, resolved once. Drives 3D fallbacks. */
 export function useWebGLSupported(): boolean | null {
-  const [supported, setSupported] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    try {
-      const canvas = document.createElement("canvas");
-      const gl = canvas.getContext("webgl2") ?? canvas.getContext("webgl");
-      setSupported(Boolean(gl));
-      // Release the context immediately; we only wanted the answer.
-      (gl as WebGLRenderingContext | null)?.getExtension("WEBGL_lose_context")?.loseContext();
-    } catch {
-      setSupported(false);
-    }
-  }, []);
-
-  return supported;
+  return useSyncExternalStore(subscribeWebGL, getWebGLSnapshot, () => null);
 }
 
 /** Shared easing vocabulary, so timing feels like one hand made it. */

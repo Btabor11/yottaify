@@ -116,6 +116,20 @@ for (const route of ROUTES) {
 for (const route of ROUTES) {
   for (const width of quick ? [1440] : [375, 1440]) {
     const { context, page } = await open(route, { width });
+    // Audit the resting state. Entrance animations (`.d3-rise`, staggered up to
+    // ~1.5 s) pass through low-opacity frames that axe would otherwise sample
+    // as a contrast failure. Infinite animations (the live pip) are left alone —
+    // they are required to hold contrast on every frame and are audited as-is.
+    await page
+      .evaluate(() =>
+        Promise.all(
+          document
+            .getAnimations()
+            .filter((a) => a.effect?.getTiming().iterations !== Infinity)
+            .map((a) => a.finished.catch(() => {})),
+        ),
+      )
+      .catch(() => {});
     const a = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
     for (const v of a.violations)
       note(route, `${width}px`, `a11y ${v.impact}`, `${v.id}: ${v.help} (${v.nodes.length}) — ${v.nodes[0]?.target?.join(" ") ?? ""}`);
@@ -276,7 +290,7 @@ for (const route of ["/"]) {
       const region = document.querySelector("#reserve") ?? document.querySelector("main");
       return {
         text: region?.innerText ?? "",
-        stillHasForm: Boolean(document.querySelector('form input[name="email"]')),
+        stillHasForm: Boolean(document.querySelector('form input[name="company"]')),
         errors: [...document.querySelectorAll('[aria-invalid="true"]')].map((e) => e.getAttribute("name")),
         focused: document.activeElement?.tagName.toLowerCase(),
       };
@@ -305,7 +319,7 @@ for (const route of ["/"]) {
     await page.click('form button[type="submit"]');
     await page.waitForTimeout(700);
     const v = await page.evaluate(() => ({
-      stillHasForm: Boolean(document.querySelector('form input[name="email"]')),
+      stillHasForm: Boolean(document.querySelector('form input[name="company"]')),
       invalid: document.querySelectorAll('[aria-invalid="true"]').length,
       alerts: [...document.querySelectorAll('[role="alert"]')].map((e) => e.innerText.trim().slice(0, 60)),
       describedBy: document.querySelector('input[name="email"]')?.getAttribute("aria-describedby"),

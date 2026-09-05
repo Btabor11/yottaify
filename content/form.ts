@@ -182,6 +182,8 @@ export const FORM_COPY = {
     "If the shape fits, we set up a call to scope term and price.",
   ],
   success: {
+    /** Status pip on the acknowledgement panel. */
+    pip: "Received",
     heading: "Reservation received",
     body: `We have your request. We will confirm your position in the allocation order by email — ${SITE.name} does not assign one automatically, a person reads these.`,
     detail: "If you do not hear from us within two business days, reply to the confirmation email and it will reach a human.",
@@ -191,6 +193,16 @@ export const FORM_COPY = {
     heading: "That did not go through",
     body: "Nothing was lost — your answers are still here. Try again, or email us directly and we will take it from there.",
     retry: "Try again",
+  },
+  /** Shown after a native (no-JavaScript) submit came back rejected. */
+  nativeInvalid: {
+    heading: "Some fields need attention",
+    body: "The submission was missing or had an invalid value in a required field. Check each one marked Required and submit again.",
+  },
+  /** The no-JS result page, when the store itself failed. */
+  nativeError: {
+    heading: "We could not save that",
+    body: `The reservation service failed on our side. Nothing you typed reached us, so please try again in a minute — or email ${SITE.email.sales} with your GPU count and start date and a person will log it by hand.`,
   },
   /** Reassurance placed next to the submit button, where the hesitation happens. */
   microcopy: {

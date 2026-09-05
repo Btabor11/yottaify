@@ -1,0 +1,106 @@
+CREATE TABLE "events" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"session_id" text NOT NULL,
+	"name" text NOT NULL,
+	"props" jsonb,
+	"path" text,
+	"referrer" text,
+	"user_agent" text,
+	"ip_hash" text,
+	"country" text,
+	"client_ts" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "reservation_events" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"reservation_id" uuid NOT NULL,
+	"type" text NOT NULL,
+	"actor" text NOT NULL,
+	"payload" jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "reservations" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"reference" text NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"company" text NOT NULL,
+	"name" text NOT NULL,
+	"email" text NOT NULL,
+	"email_domain" text NOT NULL,
+	"gpu_count" text NOT NULL,
+	"start_date" text NOT NULL,
+	"workload" text NOT NULL,
+	"notes" text,
+	"role" text,
+	"phone" text,
+	"team_size" text,
+	"current_provider" text,
+	"current_spend" text,
+	"term_interest" text,
+	"duration_months" text,
+	"storage_needs" text,
+	"data_movement" text,
+	"compliance" jsonb,
+	"decision_timeframe" text,
+	"heard_from" text,
+	"dealbreakers" text,
+	"followup_at" timestamp with time zone,
+	"path" text,
+	"referrer" text,
+	"landing_path" text,
+	"utm_source" text,
+	"utm_medium" text,
+	"utm_campaign" text,
+	"utm_term" text,
+	"utm_content" text,
+	"user_agent" text,
+	"ip_hash" text,
+	"country" text,
+	"region" text,
+	"city" text,
+	"locale" text,
+	"timezone" text,
+	"viewport_w" integer,
+	"viewport_h" integer,
+	"screen_w" integer,
+	"screen_h" integer,
+	"dpr" text,
+	"device_class" text,
+	"reduced_motion" boolean,
+	"color_scheme" text,
+	"js_enabled" boolean DEFAULT true NOT NULL,
+	"session_id" text,
+	"time_on_page_ms" integer,
+	"form_fill_ms" integer,
+	"validation_failures" integer,
+	"estimator_gpus" integer,
+	"estimator_hours" integer,
+	"sections_viewed" jsonb,
+	"pages_viewed" jsonb,
+	"source_clicks" integer,
+	"status" text DEFAULT 'new' NOT NULL,
+	"tier" text DEFAULT 'C' NOT NULL,
+	"score" integer DEFAULT 0 NOT NULL,
+	"spam" boolean DEFAULT false NOT NULL,
+	"spam_reason" text,
+	"owner" text,
+	"internal_notes" text,
+	"receipt_sent_at" timestamp with time zone,
+	"notify_sent_at" timestamp with time zone,
+	"webhook_sent_at" timestamp with time zone,
+	"idempotency_key" text,
+	CONSTRAINT "reservations_reference_unique" UNIQUE("reference"),
+	CONSTRAINT "reservations_idempotency_key_unique" UNIQUE("idempotency_key")
+);
+--> statement-breakpoint
+ALTER TABLE "reservation_events" ADD CONSTRAINT "reservation_events_reservation_id_reservations_id_fk" FOREIGN KEY ("reservation_id") REFERENCES "public"."reservations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "events_session_idx" ON "events" USING btree ("session_id","created_at");--> statement-breakpoint
+CREATE INDEX "events_name_idx" ON "events" USING btree ("name","created_at");--> statement-breakpoint
+CREATE INDEX "reservation_events_reservation_idx" ON "reservation_events" USING btree ("reservation_id","created_at");--> statement-breakpoint
+CREATE INDEX "reservations_created_at_idx" ON "reservations" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "reservations_status_idx" ON "reservations" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "reservations_email_domain_idx" ON "reservations" USING btree ("email_domain");--> statement-breakpoint
+CREATE INDEX "reservations_start_date_idx" ON "reservations" USING btree ("start_date");

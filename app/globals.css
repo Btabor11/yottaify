@@ -65,10 +65,18 @@
 
   html {
     -webkit-text-size-adjust: 100%;
-    scroll-behavior: smooth;
   }
 
-  /* Lenis takes over scrolling; native smooth-scroll would fight it. */
+  /* No `scroll-behavior: smooth` here, and it must not come back.
+     Lenis owns scrolling and moves the page by writing the scroll position
+     every frame. Native smooth-scroll animates those writes a second time,
+     so the two ease against each other and the page stops tracking the hand.
+     Lenis' own guard below only holds while it is mid-scroll — `lenis-smooth`
+     is added when a scroll starts and removed when it settles — so leaving
+     the declaration on `html` left the fight on for every scroll that began
+     from rest. Anchors are smooth because Lenis scrolls them (lib/motion.ts),
+     and jump instantly when it is not running, which is what reduced motion
+     asks for anyway. */
   html.lenis,
   html.lenis body {
     height: auto;

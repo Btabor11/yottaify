@@ -12,7 +12,7 @@ import nextTypescript from "eslint-config-next/typescript";
  * the eslintrc bridge fails on this version with a circular-structure error
  * while trying to serialise its own validation failure.
  */
-export default [
+const eslintConfig = [
   {
     ignores: [
       ".next/**",
@@ -46,3 +46,5 @@ export default [
     rules: { "no-console": "off" },
   },
 ];
+
+export default eslintConfig;

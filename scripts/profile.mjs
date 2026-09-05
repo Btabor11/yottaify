@@ -7,7 +7,7 @@
  * time by function, so an expensive idle page names its own culprit. Dev-only
  * tooling. Not part of the shipped site.
  */
-import { assertHardware, launchGpu } from "./launch.mjs";
+import { launchGpu } from "./launch.mjs";
 
 const PORT = process.env.PORT ?? "4320";
 const base = `http://127.0.0.1:${PORT}`;

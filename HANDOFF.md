@@ -124,3 +124,23 @@ Please, in this order:
 evidence trail. `LAUNCH.md` lists the placeholders blocking launch — the
 sharpest is `NEXT_PUBLIC_RESERVATION_ENDPOINT` being unset, which makes the
 form show a success message and silently drop the lead.
+
+---
+
+## Added 5 Sep — the market tracker (`/market`)
+
+New, isolated: `lib/market/`, `components/market/`, `app/(site)/market/`,
+`app/api/market/`, `scripts/market/`, `content/market.ts`, `public/market/`,
+`vercel.json`. Read `MARKET.md` before touching any of it.
+
+Things that touch your files, all additive: two npm scripts (`market:probe`,
+`market:refresh`), `CRON_SECRET` in `.env.example`, and a one-line change in
+`scripts/audit.mjs` letting a `palette.ts` name its CSS sheet with `@sheet`.
+
+**Please:** add a nav link to `/market` in `components/d3/Chrome.tsx` (I did
+not edit your nav), run `npm run verify` and `npm run market:probe`, and view
+`/market?scene=force` once with WebGL on a real GPU — I verified the scene
+under SwiftShader, which is correct but slow.
+
+The scene palette was written against the ember/hbm theme as of 5 Sep. If the
+tokens move again, `npm run audit` will say which.

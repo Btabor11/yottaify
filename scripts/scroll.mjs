@@ -15,7 +15,8 @@
 import { assertHardware, launchGpu } from "./launch.mjs";
 
 const PORT = process.env.PORT ?? "4320";
-const base = `http://127.0.0.1:${PORT}`;
+const HOST = process.env.HOST ?? "127.0.0.1";
+const base = `http://${HOST}:${PORT}`;
 const ROUTES = process.argv.slice(2).length ? process.argv.slice(2) : ["/"];
 const CPU_SLOWDOWN = 4;
 

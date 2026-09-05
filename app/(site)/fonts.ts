@@ -1,41 +1,58 @@
-import { Anybody, Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Big_Shoulders, Instrument_Sans, Instrument_Serif, Martian_Mono } from "next/font/google";
 
 /**
- * D3 "SUBSTATION" TYPOGRAPHY
+ * "SWITCHYARD" TYPOGRAPHY
  *
- * Anybody is a variable grotesque with a real width axis (50–150). D3 animates
- * that axis rather than animating position: headlines widen as they take load,
- * which is the direction's whole thesis expressed in type. A static face could
- * not do it, and faking it with transform: scaleX() would distort the strokes.
+ * Big Shoulders is a condensed American industrial face — the letterforms of
+ * a stencilled panel in a utility yard — with a nine-stop weight axis. The
+ * direction animates *weight*, not position: headlines are set as hairlines
+ * and thicken as they take load, which is what current does to a conductor.
+ * `--wght` is the only variable the choreography touches.
  *
- * Space Grotesk carries running text — a neo-grotesque with enough character
- * in the numerals and the `a` to sit under Anybody without looking like a
- * default UI face.
+ * Instrument Serif italic is the human voice. It is used sparingly, for the
+ * one clause in a headline that is a promise rather than a fact ("in days"),
+ * and for the candour section, where the site speaks in the first person.
+ * Setting the hard face and the soft face against each other is the whole
+ * typographic idea.
  *
- * JetBrains Mono handles telemetry and figures. Chosen over the other two
- * directions' monos so all three read as different rooms.
+ * Instrument Sans carries running text. Same foundry as the serif, so the
+ * italics share a skeleton, and it has a width axis for tight table cells.
+ *
+ * Martian Mono is the telemetry face: figures, labels, title blocks. Its own
+ * width axis lets a narrow setting sit in a 26-character column without a
+ * smaller size.
  */
 
-export const anybody = Anybody({
+export const bigShoulders = Big_Shoulders({
   subsets: ["latin"],
   weight: "variable",
-  axes: ["wdth"],
+  axes: ["opsz"],
   display: "swap",
   variable: "--d3-display",
 });
 
-export const spaceGrotesk = Space_Grotesk({
+export const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  style: ["italic", "normal"],
+  display: "swap",
+  variable: "--d3-voice",
+});
+
+export const instrumentSans = Instrument_Sans({
   subsets: ["latin"],
   weight: "variable",
+  axes: ["wdth"],
   display: "swap",
   variable: "--d3-sans",
 });
 
-export const jetbrains = JetBrains_Mono({
+export const martianMono = Martian_Mono({
   subsets: ["latin"],
   weight: "variable",
+  axes: ["wdth"],
   display: "swap",
   variable: "--d3-mono",
 });
 
-export const d3FontClass = `${anybody.variable} ${spaceGrotesk.variable} ${jetbrains.variable}`;
+export const d3FontClass = `${bigShoulders.variable} ${instrumentSerif.variable} ${instrumentSans.variable} ${martianMono.variable}`;

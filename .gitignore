@@ -16,3 +16,6 @@ next-env.d.ts
 
 # Screenshot harness output. Regenerate with `npm run shot`.
 /shots
+
+# File-store fallback for reservations when DATABASE_URL is unset. Real data.
+/.data

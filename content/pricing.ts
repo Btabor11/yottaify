@@ -204,7 +204,11 @@ export const PRICE_POSITION = {
     "So the argument is not that this is the lowest number on the internet. It is that this is a real number attached to real hardware with a date on it. Every rate below carries where we got it and when we checked, which is not a courtesy — it is the only way you can tell the difference.",
   /** The delivery-time contrast, which is the actual lead. */
   leadClaim: {
+    /** Caption over the two lead-time bars. */
+    title: "Time to capacity",
+    oursLabel: "Here",
     ours: "Days",
+    theirsLabel: "Hyperscaler",
     theirs: "Four to ten weeks",
     theirsQualifier: "Hyperscaler quoted lead time to provision reserved capacity.",
   },
