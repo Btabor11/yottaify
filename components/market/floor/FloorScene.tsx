@@ -9,8 +9,9 @@
  * altitude in the same lane. Where the figures disagree, a translucent band
  * fills the gap — the spread is a volume you can see.
  *
- * Our rate is a lit rail across every lane, anchored at the left by the fleet
- * itself: sixteen modules in two stacks of eight, in a real rack frame.
+ * A lit rail across every lane marks the lowest bookable third-party rate —
+ * the public floor this page is willing to compare against. Our own figure
+ * is not on this floor.
  *
  * Colour does two jobs. Module LEDs carry stock (status palette). The rail
  * and hover carry emphasis (accent). Identity is position and a label.
@@ -20,14 +21,15 @@
  * device can afford it. Under reduced motion the SVG still beneath stays.
  */
 
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Environment, Html, OrbitControls, useGLTF, useTexture } from "@react-three/drei";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { Environment, Html, OrbitControls, useTexture } from "@react-three/drei";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type { ProviderDigest, Snapshot, StockSignal } from "@/lib/market/types";
 import { makeBlade, makeBladeMaterials } from "./blade";
 import { FLOOR } from "./palette";
-import { usd } from "../format";
+import { railRate, usd } from "../format";
+import { MARKET } from "@/content/market";
 
 export interface FloorSceneProps {
   snap: Snapshot;
@@ -41,8 +43,8 @@ export interface FloorSceneProps {
 /** Price → altitude. $18 ≈ 9 units, so the whole market fits in one frame. */
 const K = 0.5;
 const LANE = 2.2;
-/** The fleet stands at the expensive end, nearest the camera; the rail runs from it out to the cheap end. */
-const fleetX = (lanes: number) => (lanes - 1) * LANE + 3.4;
+/** Right-hand edge of the plot, nearest the camera. The rail runs out to here. */
+const railEndX = (lanes: number) => (lanes - 1) * LANE + 3.4;
 
 const STOCK_LED: Record<StockSignal, { color: string; intensity: number }> = {
   "in-stock": { color: FLOOR.accent2, intensity: 2.2 },
@@ -56,7 +58,7 @@ const STOCK_LED: Record<StockSignal, { color: string; intensity: number }> = {
 export default function FloorScene(props: FloorSceneProps) {
   const lanes = useMemo(() => props.snap.providers.filter((p) => p.low != null), [props.snap]);
   const center = (lanes.length - 1) * LANE * 0.5;
-  const fx = fleetX(lanes.length);
+  const fx = railEndX(lanes.length);
   return (
     <Canvas
       shadows
@@ -80,6 +82,7 @@ export default function FloorScene(props: FloorSceneProps) {
 function Scene({ snap, hover, onHover, onPin, onReady, lanes, center }: FloorSceneProps & { lanes: ProviderDigest[]; center: number }) {
   const tex = useTexture({ diff: "/market/pcb_diff.jpg", nor: "/market/pcb_nor_gl.jpg", arm: "/market/pcb_arm.jpg" });
   const mats = useMemo(() => makeBladeMaterials(tex), [tex]);
+  const rail = railRate(snap);
   const ready = useRef(false);
   useFrame(() => {
     if (!ready.current) {
@@ -106,8 +109,7 @@ function Scene({ snap, hover, onHover, onPin, onReady, lanes, center }: FloorSce
         <Lane key={p.provider} digest={p} x={i * LANE} near={lanes.length - 1 - i} mats={mats} hovered={hover === p.provider} dimmed={hover != null && hover !== p.provider} onHover={onHover} onPin={onPin} />
       ))}
 
-      <Rail y={snap.ourRate * K} x0={-1.3} x1={fleetX(lanes.length) - 0.9} rate={snap.ourRate} />
-      <Fleet x={fleetX(lanes.length)} y={snap.ourRate * K} mats={mats} />
+      {rail != null && <Rail y={rail * K} x0={-1.3} x1={railEndX(lanes.length)} rate={rail} />}
 
       <OrbitControls
         target={[center + (lanes.length - 1) * LANE * 0.22, 3.2, 0]}
@@ -126,11 +128,15 @@ function Scene({ snap, hover, onHover, onPin, onReady, lanes, center }: FloorSce
   );
 }
 
-/** A whisper of camera drift with the pointer when nobody is dragging. */
+/**
+ * A whisper of camera drift with the pointer when nobody is dragging.
+ *
+ * Camera and pointer come off the frame state rather than `useThree`, because
+ * the compiler will not let a render-time hook result be mutated in a loop.
+ */
 function Parallax() {
-  const { camera, pointer } = useThree();
   const base = useRef<THREE.Vector3 | null>(null);
-  useFrame((_, dt) => {
+  useFrame(({ camera, pointer }, dt) => {
     base.current ??= camera.position.clone();
     const tx = base.current.x + pointer.x * 0.35;
     const ty = base.current.y + pointer.y * 0.2;
@@ -180,6 +186,8 @@ function Lane({ digest: p, x, near, mats, hovered, dimmed, onHover, onPin }: { d
   const led = STOCK_LED[p.stock];
 
   const blade = useMemo(() => makeBlade(mats, led.color, led.intensity), [mats, led.color, led.intensity]);
+  /** The frame loop drives emissive intensity, and it may only drive a ref. */
+  const ledMat = useRef<THREE.MeshStandardMaterial | null>(null);
   const group = useRef<THREE.Group>(null);
   const riser = useRef<THREE.Mesh>(null);
   const band = useRef<THREE.Mesh>(null);
@@ -187,6 +195,7 @@ function Lane({ digest: p, x, near, mats, hovered, dimmed, onHover, onPin }: { d
   const [labelY, setLabelY] = useState(anchor * K);
 
   useEffect(() => {
+    ledMat.current = blade.led;
     // Ghost = wireframe, so a gated seller is visibly not a measured one.
     blade.group.traverse((o) => {
       if (o instanceof THREE.Mesh || o instanceof THREE.InstancedMesh) {
@@ -210,7 +219,8 @@ function Lane({ digest: p, x, near, mats, hovered, dimmed, onHover, onPin }: { d
     if (Math.abs(g.position.y - labelY) > 0.01) setLabelY(g.position.y);
     const s = hovered ? 1.06 : dimmed ? 0.96 : 1;
     g.scale.setScalar(THREE.MathUtils.damp(g.scale.x, s, 6, dt));
-    blade.led.emissiveIntensity = THREE.MathUtils.damp(blade.led.emissiveIntensity, hovered ? led.intensity * 1.8 : dimmed ? led.intensity * 0.45 : led.intensity, 6, dt);
+    const lm = ledMat.current;
+    if (lm) lm.emissiveIntensity = THREE.MathUtils.damp(lm.emissiveIntensity, hovered ? led.intensity * 1.8 : dimmed ? led.intensity * 0.45 : led.intensity, 6, dt);
     if (riser.current) {
       riser.current.scale.y = THREE.MathUtils.damp(riser.current.scale.y, Math.max(0.02, g.position.y), 4, dt);
       riser.current.position.y = riser.current.scale.y / 2;
@@ -310,55 +320,9 @@ function Rail({ y, x0, x1, rate }: { y: number; x0: number; x1: number; rate: nu
         <meshBasicMaterial color={FLOOR.accent} transparent opacity={0.05} depthWrite={false} />
       </mesh>
       <Html position={[len / 2 - 6.4, 0.55, 0.3]} distanceFactor={14} zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
-        <div className="d3-tag whitespace-nowrap" style={{ color: FLOOR.accent }}>ours · {usd(rate)}</div>
+        <div className="d3-tag whitespace-nowrap" style={{ color: FLOOR.accent }}>{MARKET.floor.legend.rail.toLowerCase()} · {usd(rate)}</div>
       </Html>
     </group>
   );
 }
 
-/** Sixteen modules in two stacks of eight, in a CC0 rack frame. The anchor of the rail. */
-function Fleet({ x, y, mats }: { x: number; y: number; mats: ReturnType<typeof makeBladeMaterials> }) {
-  const { scene } = useGLTF("/market/rack.glb");
-  const rack = useMemo(() => {
-    const s = scene.clone(true);
-    s.traverse((o) => {
-      if (o instanceof THREE.Mesh) {
-        o.castShadow = true;
-        o.receiveShadow = true;
-        // The source model is painted green steel; pull it to a dark neutral so it reads as a rack, not furniture.
-        const m = (o.material as THREE.MeshStandardMaterial).clone();
-        m.color.set(FLOOR.rackTint);
-        m.roughness = Math.min(0.7, m.roughness + 0.1);
-        m.metalness = Math.max(0.5, m.metalness);
-        o.material = m;
-      }
-    });
-    return s;
-  }, [scene]);
-  const modules = useMemo(() => {
-    const out: THREE.Group[] = [];
-    for (let i = 0; i < 16; i++) {
-      const { group } = makeBlade(mats, FLOOR.accent, 1.6);
-      group.scale.setScalar(0.42);
-      const col = i < 8 ? -0.33 : 0.33;
-      group.position.set(col, 0.42 + (i % 8) * 0.44, 0);
-      out.push(group);
-    }
-    return out;
-  }, [mats]);
-  // Rack is ~2.14 m tall in the file; scale so the top shelf meets the rail.
-  const scale = Math.max(1.4, (y + 0.4) / 2.14);
-  return (
-    <group position={[x, 0, 0]}>
-      <primitive object={rack} scale={scale} />
-      <group scale={[1, scale / 1.9, 1]}>
-        {modules.map((m, i) => <primitive key={i} object={m} />)}
-      </group>
-      <Html position={[0, y + 1.1, 0.4]} center distanceFactor={12} zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
-        <div className="d3-tag whitespace-nowrap text-center" style={{ color: FLOOR.accent }}>this fleet · 16 × B300</div>
-      </Html>
-    </group>
-  );
-}
-
-useGLTF.preload("/market/rack.glb");

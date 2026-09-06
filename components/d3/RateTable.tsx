@@ -2,12 +2,13 @@ import {
   PRICE_ROWS,
   verificationLabel,
   verificationKind,
-  multipleOfOurRate,
+  multipleOfBenchmark,
   source,
   formatAsOf,
   formatAsOfShort,
   METHODOLOGY,
-  RATE,
+  BENCHMARK,
+  QUOTE,
 } from "@/content";
 import { SITE } from "@/config/site";
 import { SourceLink } from "@/components/shared/SourceLink";
@@ -15,10 +16,13 @@ import { SourceLink } from "@/components/shared/SourceLink";
 /**
  * The full sourced table, D3's version.
  *
- * Structurally the same information as D1's and D2's — it has to be, it is the
- * same content module — but read as a switchgear schedule: status as a lit pip,
- * the rate as the widest thing in the row, and the row that is us tinted with
- * the live accent.
+ * Read as a switchgear schedule: status as a lit pip, the rate as the widest
+ * thing in the row, and the benchmark row — the lowest rate anyone could
+ * confirm as in stock — tinted with the live accent.
+ *
+ * There is no row for us. We do not publish a rate, so a row with a number in
+ * it would be a lie and a row with a dash in it would be furniture. Where we
+ * sit is stated once, under the table, against the benchmark that is in it.
  *
  * Below `lg` the table reflows to stacked records. A seven-column table on a
  * 375px screen is not a table, it is a horizontal scroll nobody performs.
@@ -47,7 +51,7 @@ export function RateTable() {
             {[
               ["Provider", "w-[25%]"],
               ["USD / GPU-hour", "w-[13%]"],
-              ["vs. ours", "w-[8%]"],
+              ["vs. datum", "w-[9%]"],
               ["Term", "w-[12%]"],
               ["Status", "w-[16%]"],
               ["Source", "w-[16%]"],
@@ -74,7 +78,7 @@ export function RateTable() {
                 key={r.id}
                 className="block border-b border-[var(--rule)] py-4 lg:table-row lg:py-0"
                 style={
-                  r.isUs
+                  r.isBenchmark
                     ? { background: "color-mix(in oklab, var(--accent) 7%, transparent)" }
                     : undefined
                 }
@@ -82,7 +86,7 @@ export function RateTable() {
                 <th scope="row" className="block px-0 text-left align-top lg:table-cell lg:px-3 lg:py-4">
                   <span
                     className="d3-body block text-[0.9375rem] font-medium leading-tight"
-                    style={{ color: r.isUs ? "var(--accent)" : "var(--ink)" }}
+                    style={{ color: r.isBenchmark ? "var(--accent)" : "var(--ink)" }}
                   >
                     {r.provider}
                   </span>
@@ -104,7 +108,7 @@ export function RateTable() {
                   </span>
                   <span
                     className="d3-figure text-[1.0625rem] leading-none"
-                    style={{ color: r.isUs ? "var(--accent)" : "var(--ink)" }}
+                    style={{ color: r.isBenchmark ? "var(--accent)" : "var(--ink)" }}
                   >
                     {r.display}
                   </span>
@@ -112,10 +116,10 @@ export function RateTable() {
 
                 <td className="mt-1.5 block align-top lg:mt-0 lg:table-cell lg:px-3 lg:py-4">
                   <span className="d3-tag mr-2 text-[0.4375rem] text-[var(--ink-3)] lg:hidden">
-                    vs. ours
+                    vs. datum
                   </span>
                   <span className="d3-figure text-[0.8125rem] text-[var(--ink-2)]">
-                    {r.isUs ? "—" : multipleOfOurRate(r.low)}
+                    {r.isBenchmark ? "—" : multipleOfBenchmark(r.low)}
                   </span>
                 </td>
 
@@ -171,10 +175,18 @@ export function RateTable() {
         </tbody>
       </table>
 
+      <div className="mt-6 border-l-2 border-[var(--accent)] pl-4">
+        <p className="d3-tag text-[var(--accent)]">Where we sit</p>
+        <p className="d3-body mt-2 max-w-[80ch] text-[0.8125rem] text-[var(--ink-2)] text-pretty">
+          {QUOTE.why}
+        </p>
+      </div>
+
       <p className="d3-body mt-5 max-w-[92ch] text-[0.75rem] text-[var(--ink-3)] text-pretty">
-        Multiples in the &ldquo;vs. ours&rdquo; column are the published rate divided by{" "}
-        {RATE.display}, computed at render. Where a row is a range, the multiple uses the low end,
-        which is the comparison least favourable to us.
+        Multiples in the &ldquo;vs. datum&rdquo; column are the published rate divided by{" "}
+        {BENCHMARK.display} — the lowest rate in this table we could confirm as in stock — computed
+        at render. Where a row is a range, the multiple uses the low end, which is the comparison
+        least favourable to the datum.
       </p>
     </div>
   );

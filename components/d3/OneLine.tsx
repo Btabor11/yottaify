@@ -1,16 +1,25 @@
-import { FLEET, POWER, FACILITY, ACCESS } from "@/content";
+import { FLEET, FACILITY, ACCESS } from "@/content";
 import { SITE } from "@/config/site";
 
 /**
  * FIG. 01 — single-line diagram.
  *
- * Utility, meter, main, bus, two feeders, two loads. It is the drawing an
+ * Utility, meter, main, bus, one feeder per node. It is the drawing an
  * electrician would produce for this building, and it is the most honest
- * possible picture of the company: five symbols and a number at the meter.
+ * possible picture of the company.
  *
- * Every figure on it is a payload figure. The drawing is not to scale and says
- * so, because an unscaled drawing presented as survey is a claim we cannot
- * support.
+ * It carries no figures. It used to annotate the meter and the main with a
+ * load and a current, both calculated for a two-node build; the fleet is six
+ * nodes and those numbers are void until the service is re-specified. The
+ * topology is settled, so the topology is what is drawn. The drawing is not to
+ * scale and says so, because an unscaled drawing presented as survey is a
+ * claim we cannot support.
+ *
+ * Feeder count is derived, so the drawing follows the fleet. Loads are laid
+ * out on a row-major grid rather than a single row: six 96-unit frames side by
+ * side would either overflow the 400-unit viewBox or shrink the type below
+ * legibility, and neither is acceptable on a drawing whose whole point is that
+ * it can be read.
  */
 
 /**
@@ -32,7 +41,14 @@ const VALUE = {
 };
 
 export function OneLine() {
-  const cx = 150;
+  const cx = 200;
+  const nodes = FLEET.nodes;
+  /** Evenly spaced along the bus, wide enough that eight bars stay separable. */
+  const PITCH = 58;
+  const first = cx - ((nodes - 1) * PITCH) / 2;
+  const feeders = Array.from({ length: nodes }, (_, i) => first + i * PITCH);
+  const busX0 = feeders[0] - 32;
+  const busX1 = feeders[nodes - 1] + 32;
 
   return (
     <figure className="d3-panel d3-ticks">
@@ -47,10 +63,10 @@ export function OneLine() {
 
       <div className="px-4 py-6">
         <svg
-          viewBox="0 0 400 506"
+          viewBox="0 0 400 442"
           className="h-auto w-full"
           role="img"
-          aria-label={`Single-line diagram: utility service through a meter and main breaker to a bus, feeding two ${FLEET.gpusPerNode}-GPU nodes. ${POWER.summary}`}
+          aria-label={`Single-line diagram: utility service through a meter and main breaker to a distribution bus, which feeds ${FLEET.nodesWord} ${FLEET.gpusPerNode}-GPU nodes through one feeder each. Topology only — no load or current figures are published.`}
         >
           {/* ---------- conductor ---------- */}
           <g stroke="var(--accent)" strokeWidth={1.2} fill="none">
@@ -58,12 +74,14 @@ export function OneLine() {
             <line x1={cx} y1={124} x2={cx} y2={160} />
             <line x1={cx} y1={196} x2={cx} y2={244} />
             {/* bus */}
-            <line x1={62} y1={244} x2={302} y2={244} strokeWidth={2.4} />
-            {/* feeders */}
-            <line x1={100} y1={244} x2={100} y2={296} />
-            <line x1={250} y1={244} x2={250} y2={296} />
-            <line x1={100} y1={328} x2={100} y2={366} />
-            <line x1={250} y1={328} x2={250} y2={366} />
+            <line x1={busX0} y1={244} x2={busX1} y2={244} strokeWidth={2.4} />
+            {/* feeders, above and below their breakers */}
+            {feeders.map((x) => (
+              <g key={x}>
+                <line x1={x} y1={244} x2={x} y2={290} />
+                <line x1={x} y1={318} x2={x} y2={348} />
+              </g>
+            ))}
           </g>
 
           {/* ---------- utility ---------- */}
@@ -71,11 +89,8 @@ export function OneLine() {
           <text x={cx} y={42} textAnchor="middle" style={{ ...VALUE, fill: "var(--accent)" }}>
             ~
           </text>
-          <text x={cx + 26} y={33} style={LABEL}>
+          <text x={cx + 26} y={42} style={LABEL}>
             Utility service
-          </text>
-          <text x={cx + 26} y={49} style={{ ...LABEL, fill: "var(--ink-3)" }}>
-            {POWER.voltage} {POWER.phase}
           </text>
 
           {/* ---------- meter ---------- */}
@@ -83,11 +98,8 @@ export function OneLine() {
           <text x={cx} y={112} textAnchor="middle" style={{ ...VALUE, fill: "var(--accent)" }}>
             M
           </text>
-          <text x={cx + 26} y={103} style={LABEL}>
+          <text x={cx + 26} y={112} style={LABEL}>
             Meter
-          </text>
-          <text x={cx + 26} y={119} style={VALUE}>
-            ~{POWER.loadKw} kW at {FLEET.total} units
           </text>
 
           {/* ---------- main breaker ---------- */}
@@ -98,77 +110,65 @@ export function OneLine() {
             <line x1={cx} y1={196} x2={cx} y2={188} stroke="var(--accent)" strokeWidth={1.2} />
             <circle cx={cx} cy={168} r={2.2} fill="var(--accent)" />
             <circle cx={cx} cy={188} r={2.2} fill="var(--accent)" />
-            <text x={cx + 32} y={172} style={LABEL}>
+            <text x={cx + 32} y={182} style={LABEL}>
               Main
-            </text>
-            <text x={cx + 32} y={188} style={VALUE}>
-              ~{POWER.amps} A
             </text>
           </g>
 
-          {/* ---------- bus label ---------- */}
-          <text x={62} y={234} style={LABEL}>
+          {/* ---------- bus ---------- */}
+          <text x={busX0} y={234} style={LABEL}>
             Distribution bus
+          </text>
+          <text x={busX1} y={234} textAnchor="end" style={{ ...LABEL, fill: "var(--ink-3)" }}>
+            {FLEET.nodesWord} feeders
           </text>
 
           {/* ---------- feeder breakers + loads ---------- */}
-          {[
-            { x: 100, id: "A" },
-            { x: 250, id: "B" },
-          ].map((f) => (
-            <g key={f.id}>
+          {feeders.map((x, i) => (
+            <g key={x}>
               <rect
-                x={f.x - 11}
-                y={296}
-                width={22}
-                height={32}
+                x={x - 10}
+                y={290}
+                width={20}
+                height={28}
                 fill="var(--surface)"
                 stroke="var(--accent)"
                 strokeWidth={1.2}
               />
-              <line
-                x1={f.x - 6}
-                y1={322}
-                x2={f.x + 6}
-                y2={302}
-                stroke="var(--accent)"
-                strokeWidth={1.3}
-              />
-              <text x={f.x} y={290} textAnchor="middle" style={LABEL}>
-                Feeder {f.id}
-              </text>
+              <line x1={x - 5} y1={313} x2={x + 5} y2={295} stroke="var(--accent)" strokeWidth={1.3} />
 
-              {/* the load: eight devices in a frame */}
+              {/* the load: one frame per node, one bar per device */}
               <rect
-                x={f.x - 48}
-                y={366}
-                width={96}
-                height={96}
+                x={x - 26}
+                y={348}
+                width={52}
+                height={58}
                 fill="var(--surface)"
                 stroke="var(--accent)"
                 strokeWidth={1.2}
               />
-              {Array.from({ length: FLEET.gpusPerNode }, (_, i) => (
+              {Array.from({ length: FLEET.gpusPerNode }, (_, d) => (
                 <rect
-                  key={i}
-                  x={f.x - 40}
-                  y={374 + i * 11}
-                  width={80}
-                  height={7}
+                  key={d}
+                  x={x - 20}
+                  y={354 + d * 6.5}
+                  width={40}
+                  height={3.4}
                   fill="none"
                   stroke="var(--accent)"
                   strokeOpacity={0.55}
                   strokeWidth={0.8}
                 />
               ))}
-              <text x={f.x} y={479} textAnchor="middle" style={LABEL}>
-                Node {f.id}
-              </text>
-              <text x={f.x} y={496} textAnchor="middle" style={VALUE}>
-                {FLEET.gpusPerNode} × B300
+              <text x={x} y={420} textAnchor="middle" style={VALUE}>
+                {String.fromCharCode(65 + i)}
               </text>
             </g>
           ))}
+
+          <text x={cx} y={438} textAnchor="middle" style={{ ...LABEL, fill: "var(--ink-3)" }}>
+            {FLEET.nodes} nodes · {FLEET.gpusPerNode} × B300 each
+          </text>
         </svg>
       </div>
 

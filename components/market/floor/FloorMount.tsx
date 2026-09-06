@@ -2,6 +2,7 @@
 
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import type { Snapshot } from "@/lib/market/types";
+import { useReducedMotion, useWebGLSupported } from "@/lib/motion";
 import { FloorStill } from "./FloorStill";
 import { MARKET } from "@/content/market";
 
@@ -18,26 +19,39 @@ import { MARKET } from "@/content/market";
  */
 const FloorScene = lazy(() => import("./FloorScene"));
 
+/**
+ * Cores and Data Saver, read once. Same conservative bar as SceneMount: the
+ * canvas replaces a finished drawing, so skipping it costs nearly nothing and
+ * running it on a tired laptop costs a stuttering page.
+ */
+function deviceCanAfford(): boolean {
+  if (typeof navigator === "undefined") return false;
+  if ((navigator.hardwareConcurrency ?? 8) < 4) return false;
+  if ((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) return false;
+  // `?scene=force` skips the device heuristics. Reduced motion and missing
+  // WebGL are still hard stops — those are correctness, not performance.
+  return true;
+}
+
+function forced(): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).get("scene") === "force";
+}
+
 export function FloorMount({ snap, hover, onHover, onPin }: { snap: Snapshot; hover: string | null; onHover: (id: string | null) => void; onPin: (id: string) => void }) {
   const box = useRef<HTMLDivElement>(null);
-  const [allowed, setAllowed] = useState(false);
   const [inView, setInView] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [ready, setReady] = useState(false);
 
-  useEffect(() => {
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const cores = navigator.hardwareConcurrency ?? 8;
-    const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
-    let gl = false;
-    try {
-      const c = document.createElement("canvas");
-      gl = Boolean(c.getContext("webgl2"));
-    } catch { gl = false; }
-    // `?scene=force` skips the device heuristics (never reduced motion or missing WebGL). For review on weak machines.
-    const force = new URLSearchParams(window.location.search).get("scene") === "force";
-    setAllowed(!reduce && gl && (force || (cores >= 4 && !saveData)));
-  }, []);
+  /**
+   * Both are `useSyncExternalStore` hooks, so the answer is right on the first
+   * client render instead of one commit late — and, unlike a probe in an
+   * effect, they do not set state during the effect pass.
+   */
+  const reduced = useReducedMotion();
+  const webgl = useWebGLSupported();
+  const allowed = webgl === true && !reduced && (forced() || deviceCanAfford());
 
   useEffect(() => {
     const el = box.current;

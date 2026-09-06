@@ -1,16 +1,24 @@
-import { FLEET, POWER, STORY_OPENING } from "@/content";
+import { FLEET, GPU, STORY_OPENING } from "@/content";
 
 /**
  * The stage's resting state: the whole path of the current on one drawing —
- * a ridgeline, the service drop, the meter, the bus with sixteen taps.
+ * a ridgeline, the service drop, the meter, the bus with a tap per device.
  *
  * Not a placeholder. It is server-rendered, it is what every reduced-motion
  * and no-WebGL visitor sees behind every chapter, and it is complete on its
  * own. The particle field fades in over it as an enhancement.
  */
 export function StoryStill() {
+  /**
+   * Two rails, the fleet split across them. Rails are the drawing's structure
+   * rather than a fact about the hardware, so they stay at two however many
+   * nodes there are — what changes is how many taps hang off each. The pitch
+   * is derived so the taps stay separable at 1200 units wide.
+   */
+  const RAILS = 2;
+  const perRail = Math.ceil(FLEET.total / RAILS);
   const taps = Array.from({ length: FLEET.total }, (_, i) => i);
-  const perRail = FLEET.gpusPerNode;
+  const pitch = 960 / Math.max(1, perRail);
   const ridge = "M0 300 C 120 250, 200 290, 300 235 S 470 190, 560 230 S 760 300, 880 240 S 1060 200, 1200 262";
 
   return (
@@ -68,24 +76,26 @@ export function StoryStill() {
           y={228}
           style={{ font: "500 10px var(--font-mono)", letterSpacing: "0.1em", fill: "var(--ink-3)" }}
         >
-          ~{POWER.loadKw} KW
+          {FLEET.total} × {GPU.model.toUpperCase()}
         </text>
 
-        {/* two rails, sixteen taps */}
-        {[0, 1].map((rail) => {
+        {/* two rails, one tap per device */}
+        {Array.from({ length: RAILS }, (_, rail) => {
           const y = 372 + rail * 84;
+          const row = taps.slice(rail * perRail, rail * perRail + perRail);
+          const w = Math.min(26, pitch * 0.62);
           return (
             <g key={rail}>
               <line x1={0} y1={y} x2={1200} y2={y} stroke="url(#d3-still-fade)" strokeWidth={1.4} />
-              {taps.slice(rail * perRail, rail * perRail + perRail).map((t, i) => {
-                const x = 240 + i * 100;
+              {row.map((t, i) => {
+                const x = 120 + (i + 0.5) * pitch;
                 return (
                   <g key={t}>
                     <line x1={x} y1={y} x2={x} y2={y - 30} stroke="var(--live)" strokeOpacity={0.5} strokeWidth={1} />
                     <rect
-                      x={x - 13}
+                      x={x - w / 2}
                       y={y - 46}
-                      width={26}
+                      width={w}
                       height={16}
                       fill="none"
                       stroke="var(--live)"

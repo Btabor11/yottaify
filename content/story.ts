@@ -12,9 +12,9 @@
  */
 
 import { SITE } from "@/config/site";
-import { FACILITY, FLEET, POWER, ACCESS, TIMELINE } from "./operator";
+import { FACILITY, FLEET, ACCESS, OWNERSHIP, SUPPORT } from "./operator";
 import { NODE, HBM_PER_GPU, NVLINK, SPECS, HEADLINE_ARGUMENT, GPU } from "./hardware";
-import { PRICE_POSITION, AVAILABILITY_CLAIM, RATE } from "./pricing";
+import { PRICE_POSITION, AVAILABILITY_CLAIM, QUOTE } from "./pricing";
 import { formatAsOf } from "./copy";
 
 /**
@@ -57,14 +57,14 @@ export const STORY: StoryChapter[] = [
     id: "service",
     index: "01",
     shape: "terrain",
-    eyebrow: "Utility service",
-    heading: `${POWER.voltage}, ${POWER.phase},`,
-    voice: "into a building we own.",
-    body: `${FACILITY.kind} in the ${SITE.location.region}. ${FACILITY.ownership}, which is why there is no landlord margin on the kilowatt and no rack rent priced off someone else's capital. ${FACILITY.advantage}.`,
+    eyebrow: "The site",
+    heading: "A building we own,",
+    voice: "with nobody else in it.",
+    body: `${FACILITY.kind} in the ${SITE.location.region}, ${FACILITY.ownership.toLowerCase()}. ${FACILITY.notColo} — no shared floor, no neighbouring tenant's contractors walking past your node, and no facilities company standing between us and the machines. ${OWNERSHIP.short}, on American soil.`,
     readout: [
       { k: "Region", v: SITE.location.region, lead: true },
       { k: "Building", v: FACILITY.ownership },
-      { k: "Service", v: `${POWER.voltage} ${POWER.phase}` },
+      { k: "Tenancy", v: "Single tenant" },
     ],
     sourceId: FACILITY.sourceId,
   },
@@ -72,23 +72,23 @@ export const STORY: StoryChapter[] = [
     id: "meter",
     index: "02",
     shape: "meter",
-    eyebrow: "The meter",
-    heading: `~${POWER.loadKw} kW at the meter,`,
-    voice: `all ${FLEET.totalWord} running.`,
-    body: `${POWER.summary} ${TIMELINE.phases[1].detail.split(". ").slice(-1)[0]} Sixteen GPUs is not a cloud; it is a load, and a load is a number you can read off a dial.`,
+    eyebrow: "On the other end",
+    heading: "Someone is on site,",
+    voice: "at three in the morning.",
+    body: SUPPORT.body,
     readout: [
-      { k: "Load", v: `~${POWER.loadKw} kW`, lead: true },
-      { k: "Current", v: `~${POWER.amps} A` },
-      { k: "Cooling", v: FLEET.cooling },
+      { k: "Support", v: SUPPORT.short, lead: true },
+      { k: "Call", v: "An owner answers" },
+      { k: "Hands", v: "On the hardware" },
     ],
-    sourceId: POWER.sourceId,
+    sourceId: SUPPORT.sourceId,
   },
   {
     id: "bus",
     index: "03",
     shape: "bus",
-    eyebrow: "Distribution bus",
-    heading: `Two feeders, two nodes,`,
+    eyebrow: "The fleet",
+    heading: `${FLEET.nodesWord.charAt(0).toUpperCase() + FLEET.nodesWord.slice(1)} nodes, one fleet,`,
     voice: `${FLEET.totalWord} devices.`,
     body: `${FLEET.shape} ${ACCESS.headline} No control plane between you and the device, no orchestration layer to learn. Root on the box, the driver stack, and a queue.`,
     readout: [
@@ -139,7 +139,7 @@ export const STORY: StoryChapter[] = [
     readout: [
       { k: PRICE_POSITION.leadClaim.oursLabel, v: PRICE_POSITION.leadClaim.ours, lead: true },
       { k: PRICE_POSITION.leadClaim.theirsLabel, v: PRICE_POSITION.leadClaim.theirs },
-      { k: "On-demand", v: RATE.fullShort },
+      { k: "Rate", v: QUOTE.short },
     ],
     sourceId: "facility",
   },
@@ -151,7 +151,7 @@ export const STORY_OPENING = {
   /** The clause set in the voice face inside the stencilled headline. */
   voiceLineIndex: 1,
   /** Label on the stage's title block. */
-  stageLabel: "Fig. 00 — the path of the current, utility to die",
+  stageLabel: "Fig. 00 — the whole of it, building to die",
   /** Read by the chapter rail and the nav. */
   chapterWord: "Chapter",
   /** Labels on the stage index: the figure number and the phase readout. */
@@ -165,9 +165,9 @@ export const STORY_OPENING = {
 export const STORY_CLOSE = {
   eyebrow: "The lights come on",
   heading: "Now the paperwork.",
-  body: `Everything above is a specification. Everything below is a source, a date, and a rate. Checked against published figures, and stated so that it can be argued with.`,
+  body: `Everything above is a specification. Everything below is a source, a date and a caveat. Checked against published figures, and stated so that it can be argued with.`,
   /** Runs along the top edge of the paper, repeated. */
-  ticker: `Checked ${formatAsOf(SITE.pricingAsOf)} · every figure carries its source · ${FLEET.total} × ${GPU.model} · ${RATE.full} · online ${SITE.availability}`,
+  ticker: `Checked ${formatAsOf(SITE.pricingAsOf)} · every figure carries its source · ${FLEET.total} × ${GPU.model} · ${QUOTE.label.toLowerCase()} · online ${SITE.availability}`,
 } as const;
 
 /** Count of chapters including the opening, for the stage's progress readout. */

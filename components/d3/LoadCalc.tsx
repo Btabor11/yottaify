@@ -1,12 +1,16 @@
 "use client";
 
 /**
- * D3's estimator, read as a load calculation rather than a pricing widget.
+ * The estimator, read as a load calculation rather than a pricing widget: the
+ * fleet is a bank of cells you energise, hours are a duty period, and
+ * the result is stated at poster scale because a six-figure number is the
+ * thing the reader came for.
  *
- * Same shared `estimate()` as D1 and D2 — the totals cannot diverge between
- * directions. What differs is the presentation: the fleet is a bank of sixteen
- * cells you energise, hours are a duty period, and the result is stated at
- * poster scale because a six-figure number is the thing the reader came for.
+ * What it prices is the MARKET, not us. The poster figure is the benchmark —
+ * the cheapest run a buyer could actually have booked on the day we checked —
+ * and every other row is a delta against it. We do not publish a rate, so
+ * there is no line here for one; where we land relative to that figure is
+ * stated in words underneath, and settled on the call.
  */
 
 import { useEffect, useId, useRef, useState } from "react";
@@ -15,7 +19,8 @@ import { track as journey } from "@/lib/journey";
 import {
   ESTIMATOR,
   FLEET,
-  RATE,
+  BENCHMARK,
+  QUOTE,
   verificationKind,
   formatAsOfShort,
   source,
@@ -35,10 +40,10 @@ export function LoadCalc() {
   const gpuId = useId();
   const hourId = useId();
 
-  const { rows, ours } = estimate(gpus, hours);
+  const { rows, benchmark } = estimate(gpus, hours);
   const max = Math.max(...rows.map((r) => r.high ?? r.low)) || 1;
 
-  // Record what the visitor priced, debounced so a drag across sixteen cells
+  // Record what the visitor priced, debounced so a drag across the cells
   // lands once. The last values ride along with the reservation, so the
   // person reading the lead knows the job the visitor had in mind.
   const first = useRef(true);
@@ -72,14 +77,16 @@ export function LoadCalc() {
             {ESTIMATOR.body}
           </p>
 
-          {/* Sixteen cells, because the fleet is sixteen. Clicking cell n
+          {/* One cell per device, wrapped one node per row. Clicking cell n
               energises 1..n, which makes the cap on the fleet a visible fact
-              rather than a note under a slider. */}
+              rather than a note under a slider. A single row stopped working
+              at six nodes: forty-eight cells across a panel this wide are
+              two pixels each and cannot be hit. */}
           <div className="mt-7">
             <label htmlFor={gpuId} className="d3-tag text-[0.5rem] text-[var(--ink-2)]">
               GPUs energised
             </label>
-            <div className="mt-2.5 flex items-center gap-3">
+            <div className="mt-2.5 flex items-start gap-3">
               <input
                 id={gpuId}
                 type="range"
@@ -90,7 +97,11 @@ export function LoadCalc() {
                 onChange={(e) => setGpus(Number(e.target.value))}
                 className="sr-only"
               />
-              <div className="flex flex-1 gap-[3px]" aria-hidden>
+              <div
+                className="grid flex-1 gap-[3px]"
+                style={{ gridTemplateColumns: `repeat(${FLEET.gpusPerNode}, minmax(0, 1fr))` }}
+                aria-hidden
+              >
                 {Array.from({ length: FLEET.total }, (_, i) => {
                   const on = i < gpus;
                   return (
@@ -99,7 +110,7 @@ export function LoadCalc() {
                       type="button"
                       tabIndex={-1}
                       onClick={() => setGpus(i + 1)}
-                      className="h-7 flex-1 border transition-all duration-200"
+                      className="h-5 border transition-all duration-200"
                       style={{
                         borderColor: on ? "var(--accent)" : "var(--rule-strong)",
                         background: on
@@ -113,13 +124,13 @@ export function LoadCalc() {
               </div>
               <output
                 htmlFor={gpuId}
-                className="d3-figure w-8 shrink-0 text-right text-[1.125rem] text-[var(--accent)]"
+                className="d3-figure w-10 shrink-0 text-right text-[1.125rem] text-[var(--accent)]"
               >
                 {gpus}
               </output>
             </div>
             <p className="d3-tag mt-2 text-[0.4375rem] text-[var(--ink-3)]">
-              Capped at {FLEET.total} because that is the fleet
+              One row per node · capped at {FLEET.total} because that is the fleet
             </p>
           </div>
 
@@ -167,16 +178,25 @@ export function LoadCalc() {
           {/* --- the result -------------------------------------------- */}
           <div className="mt-8 border-t border-[var(--rule-strong)] pt-5">
             <p className="d3-figure text-[0.6875rem] text-[var(--ink-3)]">
-              {RATE.display} × {gpus} × {hours.toLocaleString("en-US")} h
+              {BENCHMARK.display} × {gpus} × {hours.toLocaleString("en-US")} h
             </p>
             <p
               className="d3-display mt-2 text-[clamp(2rem,4.5vw,3rem)] leading-none text-[var(--accent)]"
               style={{ ["--wght" as string]: 800 }}
               aria-live="polite"
             >
-              {usd(ours.low)}
+              {usd(benchmark.low)}
             </p>
-            <p className="d3-tag mt-2 text-[0.4375rem] text-[var(--ink-3)]">At our on-demand rate</p>
+            <p className="d3-tag mt-2 max-w-[34ch] text-[0.4375rem] leading-relaxed text-[var(--ink-3)]">
+              {ESTIMATOR.benchmarkNote}
+            </p>
+          </div>
+
+          <div className="mt-5 border-l-2 border-[var(--accent)] pl-4">
+            <p className="d3-tag text-[var(--accent)]">{QUOTE.label}</p>
+            <p className="d3-body mt-2 max-w-[40ch] text-[0.8125rem] text-[var(--ink-2)] text-pretty">
+              {ESTIMATOR.ourNote}
+            </p>
           </div>
 
           <p className="d3-body mt-6 max-w-[44ch] text-[0.75rem] text-[var(--ink-3)] text-pretty">
@@ -189,39 +209,39 @@ export function LoadCalc() {
           {rows.map((r) => {
             const doubtful = verificationKind(r.row.sourceId) === "unverified-listing";
             const src = source(r.row.sourceId);
-            const isUs = Boolean(r.row.isUs);
+            const datum = Boolean(r.row.isBenchmark);
             return (
               <li
                 key={r.row.id}
                 className="border-b border-[var(--rule)] px-3 py-3.5"
                 style={
-                  isUs ? { background: "color-mix(in oklab, var(--accent) 7%, transparent)" } : undefined
+                  datum ? { background: "color-mix(in oklab, var(--accent) 7%, transparent)" } : undefined
                 }
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                   <span
                     className="d3-body text-[0.875rem] font-medium"
-                    style={{ color: isUs ? "var(--accent)" : "var(--ink)" }}
+                    style={{ color: datum ? "var(--accent)" : "var(--ink)" }}
                   >
                     {r.row.provider}
                   </span>
                   <span className="flex items-baseline gap-3">
                     <span
                       className="d3-figure text-[1rem] leading-none"
-                      style={{ color: isUs ? "var(--accent)" : "var(--ink)" }}
+                      style={{ color: datum ? "var(--accent)" : "var(--ink)" }}
                     >
                       {usd(r.low)}
                       {r.high !== null && r.high !== r.low && (
                         <span className="text-[var(--ink-3)]">–{usd(r.high)}</span>
                       )}
                     </span>
-                    {!isUs && (
+                    {!datum && (
                       <span
                         className="d3-figure w-24 shrink-0 text-right text-[0.6875rem]"
-                        style={{ color: r.deltaVsOurs > 0 ? "var(--ink-2)" : "var(--accent)" }}
+                        style={{ color: r.deltaVsBenchmark > 0 ? "var(--ink-2)" : "var(--caution)" }}
                       >
-                        {r.deltaVsOurs > 0 ? "+" : ""}
-                        {usd(r.deltaVsOurs)}
+                        {r.deltaVsBenchmark > 0 ? "+" : ""}
+                        {usd(r.deltaVsBenchmark)}
                       </span>
                     )}
                   </span>
@@ -233,13 +253,13 @@ export function LoadCalc() {
                       className="h-full transition-[width] duration-500 ease-out"
                       style={{
                         width: `${((r.high ?? r.low) / max) * 100}%`,
-                        background: isUs
+                        background: datum
                           ? "var(--accent)"
                           : doubtful
                             ? "var(--caution)"
                             : "var(--rule-strong)",
                         opacity: doubtful ? 0.55 : 1,
-                        boxShadow: isUs ? "0 0 12px -3px var(--accent)" : undefined,
+                        boxShadow: datum ? "0 0 12px -3px var(--accent)" : undefined,
                       }}
                     />
                   </div>
@@ -252,8 +272,9 @@ export function LoadCalc() {
             );
           })}
           <li className="px-3 py-3.5">
-            <p className="d3-tag text-[0.4375rem] text-[var(--ink-3)]">
-              Baseline for the difference column is our own {usd(ours.low)}
+            <p className="d3-tag text-[0.4375rem] leading-relaxed text-[var(--ink-3)]">
+              Baseline for the difference column is {usd(benchmark.low)} — the same job at the
+              lowest rate anyone could confirm as in stock
             </p>
           </li>
         </ul>

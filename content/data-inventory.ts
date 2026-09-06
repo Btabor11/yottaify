@@ -22,6 +22,7 @@
 
 import type { NewReservation } from "@/lib/server/schema";
 import { SITE } from "@/config/site";
+import { FLEET } from "./operator";
 
 // --- decisions --------------------------------------------------------------
 
@@ -97,7 +98,7 @@ export const INVENTORY = {
   name: f("your name", "to address you"),
   email: f("work email", "to reply to you — it is the only way we contact you"),
   emailDomain: f("the domain part of your email", "to group requests from the same organisation", false),
-  gpuCount: f("GPUs needed", "to tell whether we can serve you at all — the fleet is sixteen"),
+  gpuCount: f("GPUs needed", `to tell whether we can serve you at all — the fleet is ${FLEET.totalWord}`),
   startDate: f("target start date", "to schedule against other reservations"),
   workload: f("workload type", "to check the hardware fits what you intend to run"),
   notes: f("anything you chose to add", "to understand the request"),

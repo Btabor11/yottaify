@@ -12,8 +12,14 @@ export const MARKET = {
   h1: "What the B300 market says the price is — and how much it disagrees with itself.",
   standfirst:
     "Every day we read each seller's own rate card and every public tracker that reports on them. Then we measure the gap. A published price a buyer cannot verify is not a price; it is a rumour with a dollar sign.",
-  ourRail: "Our on-demand rate",
-  ourRailNote: "Fixed. The one line on this page that does not move.",
+  /**
+   * The reference line. It was our own rate until the site stopped publishing
+   * one; it is now the lowest confirmed-bookable figure, which is the only
+   * number on this page a reader could act on today.
+   */
+  railLabel: "Lowest bookable rate",
+  railNote: "The only figure here anyone confirmed you can actually buy.",
+  railShort: "BOOKABLE",
 
   hero: {
     label: "Legibility index",
@@ -34,7 +40,7 @@ export const MARKET = {
       published: "Seller's own rate",
       reported: "As reported by a tracker",
       band: "Spread between them",
-      rail: "Our rate",
+      rail: "Lowest bookable",
       inStock: "In stock",
       limited: "Limited",
       outOfStock: "Out of stock",

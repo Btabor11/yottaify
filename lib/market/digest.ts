@@ -30,7 +30,7 @@ function bestStock(rows: Observation[]): { stock: StockSignal; basis: ProviderDi
   return { stock: informative[0].stock, basis: informative[0].stockBasis! };
 }
 
-export function buildSnapshot(results: SourceResult[], ourRate: number, day: string, run: RunSummary): Snapshot {
+export function buildSnapshot(results: SourceResult[], day: string, run: RunSummary): Snapshot {
   const all = results.flatMap((r) => r.observations);
   const byProvider = new Map<ProviderId, Observation[]>();
   for (const o of all) {
@@ -104,7 +104,7 @@ export function buildSnapshot(results: SourceResult[], ourRate: number, day: str
     error: r.error?.message,
   }));
 
-  return { day, run, ourRate, providers, inStock, legibility, sources, medianOnDemand, lowestListed, lowestBookable };
+  return { day, run, providers, inStock, legibility, sources, medianOnDemand, lowestListed, lowestBookable };
 }
 
 export function computeLegibility(providers: ProviderDigest[], inStock: Snapshot["inStock"]): Legibility {

@@ -3,7 +3,7 @@
 import { useId, useMemo, useState } from "react";
 import type { ProviderDigest, Snapshot } from "@/lib/market/types";
 import { MARKET } from "@/content/market";
-import { STOCK_GLYPH, STOCK_TOKEN, pct, usd } from "./format";
+import { STOCK_GLYPH, STOCK_TOKEN, pct, railRate, usd } from "./format";
 
 /**
  * Dumbbell-per-seller. Horizontal so twenty names fit. For each seller: a
@@ -26,7 +26,8 @@ export function SpreadChart({ snap, hover, onHover, onPin }: { snap: Snapshot; h
 
   if (!rows.length) return <p className="d3-body text-[var(--ink-2)]">{MARKET.spread.empty}</p>;
 
-  const allFig = rows.flatMap((p) => [p.low!, p.high!]).concat(snap.ourRate);
+  const rail = railRate(snap);
+  const allFig = rows.flatMap((p) => [p.low!, p.high!]).concat(rail ?? []);
   const min = Math.floor(Math.min(...allFig) - 0.5);
   const max = Math.ceil(Math.max(...allFig) + 0.5);
   const W = 720, LABEL = 148, RIGHT = 92, ROW = 30, TOP = 26, BOTTOM = 30;
@@ -50,9 +51,15 @@ export function SpreadChart({ snap, hover, onHover, onPin }: { snap: Snapshot; h
             </g>
           ))}
 
-          {/* our rail — the emphasis */}
-          <line x1={x(snap.ourRate)} x2={x(snap.ourRate)} y1={TOP - 14} y2={H - BOTTOM + 4} stroke="var(--accent)" strokeWidth={1.5} />
-          <text x={x(snap.ourRate)} y={TOP - 18} textAnchor="middle" fontSize={10} fill="var(--accent)" letterSpacing="0.08em">OURS {usd(snap.ourRate)}</text>
+          {/* the rail — the lowest confirmed-bookable figure, and the emphasis */}
+          {rail != null && (
+            <>
+              <line x1={x(rail)} x2={x(rail)} y1={TOP - 14} y2={H - BOTTOM + 4} stroke="var(--accent)" strokeWidth={1.5} />
+              <text x={x(rail)} y={TOP - 18} textAnchor="middle" fontSize={10} fill="var(--accent)" letterSpacing="0.08em">
+                {MARKET.railShort} {usd(rail)}
+              </text>
+            </>
+          )}
 
           {rows.map((p, i) => {
             const cy = TOP + i * ROW + ROW / 2;

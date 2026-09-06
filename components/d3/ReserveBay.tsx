@@ -1,5 +1,5 @@
 import { SITE } from "@/config/site";
-import { SECTIONS, FORM_COPY, CANDOUR, FLEET, NODE, RATE, CONTRACT, ACCESS } from "@/content";
+import { SECTIONS, FORM_COPY, CANDOUR, FLEET, NODE, QUOTE, CONTRACT, ACCESS, SUPPORT } from "@/content";
 import { Bay } from "./Bay";
 import { Console } from "./Console";
 
@@ -32,7 +32,8 @@ export function ReserveBay() {
                   ["Hardware", `${FLEET.gpusPerNode} × B300 per node`],
                   ["Memory", `${NODE.hbmGbFormatted} GB per node`],
                   ["Access", `${ACCESS.model}, SSH`],
-                  ["On-demand", RATE.full],
+                  ["On-demand", QUOTE.label],
+                  ["Support", SUPPORT.short],
                   ["Terms", `${CONTRACT.model}, ${CONTRACT.termYears}`],
                   ["Online", SITE.availability],
                 ].map(([k, v]) => (

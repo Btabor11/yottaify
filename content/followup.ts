@@ -99,6 +99,7 @@ export const FOLLOWUP_FIELDS: FollowupField[] = [
       { value: "on-demand", label: "On-demand, month to month" },
       { value: "1y", label: "Committed, around a year" },
       { value: "2-3y", label: "Committed, two to three years" },
+      { value: "4-5y", label: "Committed, four to five years" },
       { value: "unsure", label: "Not sure yet — want to talk it through" },
     ],
   },

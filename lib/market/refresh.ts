@@ -8,7 +8,7 @@ import type { RunSummary, Snapshot, SourceResult } from "./types";
  * on top of the fetch timeout so a hung parser cannot hold the cron open.
  * Returns the raw results (stored for audit) and the digested snapshot.
  */
-export async function runRefresh(opts: { ourRate: number; day?: string; only?: string[] }): Promise<{ results: SourceResult[]; snapshot: Snapshot }> {
+export async function runRefresh(opts: { day?: string; only?: string[] } = {}): Promise<{ results: SourceResult[]; snapshot: Snapshot }> {
   const startedAt = new Date().toISOString();
   const runId = randomUUID();
   const sources = opts.only?.length ? SOURCES.filter((s) => opts.only!.includes(s.meta.id)) : SOURCES;
@@ -37,7 +37,7 @@ export async function runRefresh(opts: { ourRate: number; day?: string; only?: s
     sourcesFailed: results.filter((r) => r.error).length,
     observations: results.reduce((n, r) => n + r.observations.length, 0),
   };
-  const snapshot = buildSnapshot(results, opts.ourRate, opts.day ?? utcDay(), run);
+  const snapshot = buildSnapshot(results, opts.day ?? utcDay(), run);
   return { results, snapshot };
 }
 

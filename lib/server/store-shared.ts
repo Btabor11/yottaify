@@ -73,7 +73,7 @@ export interface Store {
 
 export const OPEN_LIST = ["new", "contacted", "call_scheduled", "term_sheet", "contracted", "onboarding"] as const;
 
-/** Low end of a GPU band, for summing. "1-2" → 1, "16+" → 16. */
+/** Low end of a GPU band, for summing. "1-2" → 1, "48+" → 48. */
 export function gpuLow(band: string): number {
   const n = parseInt(band, 10);
   return Number.isFinite(n) ? n : 0;

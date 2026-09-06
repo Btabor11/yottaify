@@ -1,5 +1,5 @@
 import { SITE } from "@/config/site";
-import { PRICE_ROWS, RATE, GPU, SPECS, META, source, FLEET } from "@/content";
+import { PRICE_ROWS, QUOTE, GPU, SPECS, META, source, FLEET } from "@/content";
 
 /**
  * JSON-LD for the pricing page.
@@ -8,10 +8,14 @@ import { PRICE_ROWS, RATE, GPU, SPECS, META, source, FLEET } from "@/content";
  * so it gets structured data. Only facts that appear visibly on the page are
  * described here — structured data that claims more than the page shows is how
  * sites get manual actions.
+ *
+ * The Offer deliberately carries no `price`. The page does not show one, so
+ * emitting one here would be exactly that mismatch, and it would put a figure
+ * into search results and assistant answers that we have not published
+ * anywhere a human can read. `PriceSpecification` with a description is the
+ * honest encoding of "quoted on request".
  */
 export function pricingJsonLd() {
-  const ours = PRICE_ROWS.find((r) => r.isUs)!;
-
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -35,15 +39,18 @@ export function pricingJsonLd() {
         })),
         offers: {
           "@type": "Offer",
-          price: ours.low,
           priceCurrency: "USD",
-          // Per GPU-hour. UN/CEFACT HUR = hour.
-          unitCode: "HUR",
           availability: "https://schema.org/PreOrder",
           availabilityStarts: "2026-11-01",
-          priceValidUntil: "2026-12-31",
           url: `${SITE.url}/pricing`,
-          description: `${RATE.full}, on-demand.`,
+          description: `${QUOTE.label}. ${QUOTE.position}.`,
+          priceSpecification: {
+            "@type": "PriceSpecification",
+            priceCurrency: "USD",
+            // Per GPU-hour. UN/CEFACT HUR = hour.
+            unitCode: "HUR",
+            description: QUOTE.why,
+          },
         },
       },
       {

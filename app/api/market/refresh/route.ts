@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { runRefresh } from "@/lib/market/refresh";
 import { getMarketStore } from "@/lib/market/store";
-import { OUR_RATE } from "@/content/pricing";
 
 /**
  * Daily refresh. Fired by Vercel Cron (see vercel.json) and by
@@ -24,7 +23,7 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const only = url.searchParams.get("only")?.split(",").filter(Boolean);
-  const { results, snapshot } = await runRefresh({ ourRate: OUR_RATE, only });
+  const { results, snapshot } = await runRefresh({ only });
   await getMarketStore().saveRun(results, snapshot);
 
   return NextResponse.json({

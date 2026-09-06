@@ -8,7 +8,8 @@
  * GPU count and target start date. They get prominence, not burial.
  */
 
-import { FLEET_TOTAL, GPUS_PER_NODE } from "./operator";
+import { FLEET_TOTAL, GPUS_PER_NODE, NODE_COUNT, CONTRACT } from "./operator";
+import { NODE } from "./hardware";
 import { SITE } from "@/config/site";
 
 export type FieldWeight = "primary" | "standard";
@@ -61,21 +62,44 @@ export const START_DATE_PRESETS: { value: string; label: string }[] = (() => {
   });
 })();
 
+/**
+ * The ladder is node-shaped: part of a node, a node, a few nodes, all of them.
+ *
+ * Values are the stored strings and are deliberately stable — a submission in
+ * the log from before the fleet grew still parses, and `gpuLow` in
+ * lib/server/store-shared.ts reads the leading integer off every one of them.
+ * Only add rungs; renaming one orphans history.
+ */
 export const GPU_COUNT_OPTIONS: FieldOption[] = [
   { value: "1-2", label: "1–2 GPUs", hint: "Evaluation or single-device work" },
   { value: "4", label: "4 GPUs", hint: "Half a node" },
   {
     value: "8",
-    label: "8 GPUs",
-    hint: `A full node — ${(288 * GPUS_PER_NODE).toLocaleString("en-US")} GB HBM3e, one NVLink domain`,
+    label: `${GPUS_PER_NODE} GPUs`,
+    hint: `A full node — ${NODE.hbmGbFormatted} GB HBM3e, one NVLink domain`,
   },
   {
     value: "16",
-    label: `${FLEET_TOTAL} GPUs`,
-    hint: "Both nodes. The entire fleet.",
+    label: `${GPUS_PER_NODE * 2} GPUs`,
+    hint: "Two nodes.",
   },
   {
-    value: "16+",
+    value: "24",
+    label: `${GPUS_PER_NODE * 3} GPUs`,
+    hint: "Three nodes.",
+  },
+  {
+    value: "32",
+    label: `${GPUS_PER_NODE * 4} GPUs`,
+    hint: "Four nodes.",
+  },
+  {
+    value: "48",
+    label: `${FLEET_TOTAL} GPUs`,
+    hint: `All ${NODE_COUNT} nodes. The entire fleet.`,
+  },
+  {
+    value: "48+",
     label: `More than ${FLEET_TOTAL}`,
     hint: "Exceeds this fleet. Worth a conversation about timing.",
   },
@@ -172,7 +196,7 @@ export function field(name: string): FieldDef {
 export const FORM_COPY = {
   eyebrow: "Reserve capacity",
   heading: "Hold a slot",
-  standfirst: `${FLEET_TOTAL} GPUs across ${FLEET_TOTAL / GPUS_PER_NODE} nodes, online ${SITE.availability}. Reservations are how allocation order gets decided, and take-or-pay terms get set on a call — not in this form.`,
+  standfirst: `${FLEET_TOTAL} GPUs across ${NODE_COUNT} nodes, online ${SITE.availability}. Reservations are how allocation order gets decided. On-demand quotes and ${CONTRACT.termYears} leases are set on a call — not in this form.`,
   submit: "Submit reservation",
   submitting: "Submitting…",
   /** What actually happens next, stated accurately. */

@@ -7,9 +7,9 @@
  */
 
 import { SITE } from "@/config/site";
-import { FLEET, ACCESS, FACILITY } from "./operator";
+import { FLEET, ACCESS, FACILITY, SUPPORT, OWNERSHIP } from "./operator";
 import { NODE } from "./hardware";
-import { RATE } from "./pricing";
+import { QUOTE } from "./pricing";
 
 export interface NavItem {
   id: string;
@@ -23,7 +23,7 @@ export const NAV: NavItem[] = [
   { id: "pricing", label: "Pricing", href: "#pricing" },
   { id: "specs", label: "Hardware", href: "#specs" },
   { id: "operator", label: "Operator", href: "#operator" },
-  { id: "name", label: "Name", href: "#name" },
+  { id: "assurance", label: "Assurance", href: "#assurance" },
   { id: "process", label: "Process", href: "#process" },
   { id: "faq", label: "Questions", href: "#faq" },
   { id: "reserve", label: "Reserve", href: "#reserve", cta: true },
@@ -37,11 +37,15 @@ export const HERO = {
   headline: "B300 capacity in days, not months.",
   /** Split for line-by-line typographic treatment. Reassembles to `headline`. */
   headlineLines: ["B300 capacity", "in days,", "not months."],
-  standfirst: `${FLEET.shape} ${ACCESS.headline} Air-cooled, in a warehouse we own in the ${SITE.location.region}. On-demand at ${RATE.full}, online ${SITE.availability}.`,
+  standfirst: `${FLEET.shape} ${ACCESS.headline} In a warehouse we own outright in the ${SITE.location.region} — ${OWNERSHIP.short.toLowerCase()}, single tenant, with an operator on site. Online ${SITE.availability}.`,
   /**
    * Four facts under the hero. Every one is checkable further down the same
    * page, and each carries the source id it rests on so a direction can cite
    * it without a component deciding which source applies.
+   *
+   * There is no rate here on purpose — see QUOTE in content/pricing.ts. The
+   * slot it used to occupy now carries the thing a hyperscaler cannot match,
+   * which is a better use of the fourth tile than a number would be.
    */
   facts: [
     {
@@ -56,7 +60,7 @@ export const HERO = {
       detail: "HBM3e, one NVLink domain",
       sourceId: "nvidiaBlackwellUltra",
     },
-    { label: "On-demand", value: RATE.display, detail: RATE.unit, sourceId: "ours" },
+    { label: "Support", value: "On site", detail: "24/7, by the owners", sourceId: "facility" },
     {
       label: "Online",
       value: SITE.availabilityShort,
@@ -87,7 +91,7 @@ export const SECTIONS = {
     index: "03",
     eyebrow: "Operator",
     heading: "Who runs this, and where it sits",
-    standfirst: `${FACILITY.kind} in the ${SITE.location.region}. ${FACILITY.ownership}. ${FACILITY.advantage}.`,
+    standfirst: `${FACILITY.kind} in the ${SITE.location.region}, ${FACILITY.ownership.toLowerCase()}. ${OWNERSHIP.short}. ${SUPPORT.short}.`,
   },
   name: {
     index: "03.2",
@@ -95,21 +99,28 @@ export const SECTIONS = {
     heading: `Why ${SITE.name}`,
     standfirst: "",
   },
-  process: {
+  assurance: {
     index: "04",
+    eyebrow: "Assurance",
+    heading: "Security, on the record",
+    standfirst:
+      "The certifications we are working towards and where each one honestly stands, plus the part of the security story a single-tenant building already gives you.",
+  },
+  process: {
+    index: "05",
     eyebrow: "Process",
     heading: "Every step, in order",
     standfirst:
       "What to have ready, what a reservation does, and what happens between a slot and a running job.",
   },
   reserve: {
-    index: "06",
+    index: "07",
     eyebrow: "Reserve",
     heading: "Hold a slot",
     standfirst: "",
   },
   faq: {
-    index: "05",
+    index: "06",
     eyebrow: "Questions",
     heading: "Asked before reserving",
     standfirst:
@@ -129,7 +140,7 @@ export const TITLEBLOCK = {
   scale: "Scale",
   scaleValue: "Not to scale",
   of: "of",
-  total: 6,
+  total: 7,
 } as const;
 
 export const FOOTER = {
@@ -140,8 +151,11 @@ export const FOOTER = {
       label: "Site",
       links: [
         { label: "Pricing comparison", href: "/pricing", scope: "site" },
+        { label: "Leases, 1–5 years", href: "/#leases", scope: "site" },
         { label: "Reserve capacity", href: "/#reserve", scope: "site" },
         { label: "Hardware", href: "/#specs", scope: "site" },
+        { label: "Assurance", href: "/#assurance", scope: "site" },
+        { label: "Facility and power", href: "/facility", scope: "site" },
         { label: "The name", href: "/#name", scope: "site" },
         { label: "How it works", href: "/#process", scope: "site" },
         { label: "Questions", href: "/#faq", scope: "site" },
@@ -161,7 +175,7 @@ export const FOOTER = {
     links: readonly { label: string; href: string; scope: "site" | "absolute" }[];
   }[],
   /** Rendered at the bottom of every page. The honesty, compressed. */
-  disclosure: `${SITE.name} has no customers, no uptime history, and no third-party certifications. Every figure on this site carries a source and the date it was checked. Rates verified ${formatAsOf(SITE.pricingAsOf)} and subject to change.`,
+  disclosure: `${SITE.name} has no customers, no operating history, and no third-party certifications in hand — the ones we are working towards are listed with their honest status. We do not publish our own rate; it is quoted against the job on the call. Every third-party figure on this site carries a source and the date it was checked. Rates verified ${formatAsOf(SITE.pricingAsOf)} and subject to change.`,
   get copyright() {
     return `© ${new Date().getFullYear()} ${SITE.legalName}`;
   },
@@ -174,10 +188,10 @@ export const META = {
   },
   pricing: {
     title: `B300 GPU pricing comparison — ${SITE.name}`,
-    description: `Published NVIDIA B300 rental rates across neoclouds and hyperscalers, each with its source and the date it was checked. Our on-demand rate is $6.75 per GPU-hour. Verified ${formatAsOf(SITE.pricingAsOf)}.`,
+    description: `Published NVIDIA B300 rental rates across neoclouds and hyperscalers, each with its source and the date it was checked. Our own capacity is quoted against the job on a call. Verified ${formatAsOf(SITE.pricingAsOf)}.`,
     /** H1 for /pricing. Different from the landing section heading on purpose. */
     h1: "NVIDIA B300 rental pricing, sourced and dated",
-    standfirst: `Every published B300 rate we could find, what it costs per GPU-hour, and whether we could confirm the capacity was actually available. Last checked ${formatAsOf(SITE.pricingAsOf)}.`,
+    standfirst: `Every published B300 rate we could find, what it costs per GPU-hour, and whether we could confirm the capacity was actually available. ${QUOTE.position} — the figure is set on the call. Last checked ${formatAsOf(SITE.pricingAsOf)}.`,
   },
   legal: {
     draftBanner: "Draft — pending legal review",

@@ -6,6 +6,7 @@ import { Paperwork } from "@/components/d3/Paperwork";
 import { PricingBay } from "@/components/d3/PricingBay";
 import { SpecsBay } from "@/components/d3/SpecsBay";
 import { OperatorBay } from "@/components/d3/OperatorBay";
+import { AssuranceBay } from "@/components/d3/AssuranceBay";
 import { ProcessBay } from "@/components/d3/ProcessBay";
 import { FaqBay } from "@/components/d3/FaqBay";
 import { ReserveBay } from "@/components/d3/ReserveBay";
@@ -35,6 +36,7 @@ export default function HomePage() {
           <PricingBay />
           <SpecsBay />
           <OperatorBay />
+          <AssuranceBay />
           <ProcessBay />
           <FaqBay />
           <ReserveBay />

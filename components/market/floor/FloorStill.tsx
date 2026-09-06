@@ -1,6 +1,6 @@
 import type { Snapshot } from "@/lib/market/types";
 import { MARKET } from "@/content/market";
-import { STOCK_GLYPH, STOCK_TOKEN, usd } from "../format";
+import { STOCK_GLYPH, STOCK_TOKEN, railRate, usd } from "../format";
 
 /**
  * The floor as a drawing. Server-rendered SVG: what everyone without WebGL,
@@ -11,12 +11,13 @@ import { STOCK_GLYPH, STOCK_TOKEN, usd } from "../format";
  */
 export function FloorStill({ snap, hover }: { snap: Snapshot; hover: string | null }) {
   const lanes = snap.providers.filter((p) => p.low != null);
-  const maxP = Math.max(snap.ourRate, ...lanes.map((p) => p.high!)) + 1;
+  const rail = railRate(snap);
+  const maxP = Math.max(rail ?? 0, ...lanes.map((p) => p.high!)) + 1;
   const W = 1200, H = 520, L = 90, R = 40, T = 40, B = 70;
   const laneW = (W - L - R) / Math.max(1, lanes.length);
   const y = (v: number) => T + (1 - v / maxP) * (H - T - B);
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 h-full w-full" role="img" aria-label="The market floor: each seller's published and reported B300 prices as altitudes, with our rate as a rail." style={{ fontFamily: "var(--fm)" }}>
+    <svg viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 h-full w-full" role="img" aria-label={`The market floor: each seller's published and reported B300 prices as altitudes, with ${MARKET.railLabel.toLowerCase()} drawn across as a rail.`} style={{ fontFamily: "var(--fm)" }}>
       <defs>
         <linearGradient id="floor-ground" x1="0" x2="0" y1="0" y2="1">
           <stop offset="0" stopColor="var(--surface)" stopOpacity="0" />
@@ -30,19 +31,15 @@ export function FloorStill({ snap, hover }: { snap: Snapshot; hover: string | nu
           <text x={L - 26} y={y(v) + 3.5} textAnchor="end" fontSize={10} fill="var(--ink-3)">${v}</text>
         </g>
       ))}
-      {/* fleet anchor */}
-      <g transform={`translate(${L - 62} 0)`}>
-        {Array.from({ length: 8 }).map((_, i) => (
-          <g key={i}>
-            <rect x={0} y={y(snap.ourRate) + 6 + i * 9} width={16} height={5} fill="var(--accent)" opacity={0.85} />
-            <rect x={20} y={y(snap.ourRate) + 6 + i * 9} width={16} height={5} fill="var(--accent)" opacity={0.85} />
-          </g>
-        ))}
-        <text x={18} y={H - B + 18} textAnchor="middle" fontSize={9} fill="var(--accent)" letterSpacing="0.1em">THIS FLEET</text>
-      </g>
-      {/* rail */}
-      <line x1={L - 30} x2={W - R} y1={y(snap.ourRate)} y2={y(snap.ourRate)} stroke="var(--accent)" strokeWidth={2} />
-      <text x={W - R} y={y(snap.ourRate) - 8} textAnchor="end" fontSize={10} fill="var(--accent)" letterSpacing="0.08em">OURS {usd(snap.ourRate)}</text>
+      {/* rail: the lowest rate anyone confirmed as buyable today */}
+      {rail != null && (
+        <>
+          <line x1={L - 30} x2={W - R} y1={y(rail)} y2={y(rail)} stroke="var(--accent)" strokeWidth={2} />
+          <text x={W - R} y={y(rail) - 8} textAnchor="end" fontSize={10} fill="var(--accent)" letterSpacing="0.08em">
+            {MARKET.railShort} {usd(rail)}
+          </text>
+        </>
+      )}
 
       {lanes.map((p, i) => {
         const cx = L + i * laneW + laneW / 2;

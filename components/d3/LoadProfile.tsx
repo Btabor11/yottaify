@@ -1,8 +1,9 @@
 import {
   CHART_ROWS,
   CHART_MAX,
-  RATE,
-  multipleOfOurRate,
+  BENCHMARK,
+  QUOTE,
+  multipleOfBenchmark,
   verificationShort,
   verificationKind,
   source,
@@ -10,19 +11,20 @@ import {
 } from "@/content";
 
 /**
- * The rate comparison, drawn as vertical columns rather than the horizontal
- * bars D1 uses. Two reasons, both about this direction's argument:
+ * The rate comparison, drawn as vertical columns rather than horizontal bars.
+ * Height is the register this direction works in: a hyperscaler column that
+ * towers over the rest makes the point before any label is read.
  *
- *  · Height is the register D3 works in. A hyperscaler column that towers
- *    four screens' worth over ours makes the point before any label is read.
- *  · Our own rate becomes a datum line drawn across every column, so "how far
- *    above us is this" is a distance you can see rather than a number you
- *    have to compute.
+ * The datum is the lowest rate anyone could confirm as actually in stock, not
+ * a rate of ours — we do not publish one. Everything under that line is drawn
+ * as a band rather than a column, because that is honestly all we can say in
+ * public: our quote lands in there, and where exactly depends on the job.
+ * A band is the correct shape for a range; a column would be a number.
  *
- * The one column cheaper than ours sits BELOW the datum and is drawn hollow
- * with a dashed cap, because it is a published price with no confirmed stock
- * behind it. The chart is not allowed to hide it and it is not allowed to
- * pretend it is equivalent either.
+ * The one published price cheaper than the datum sits below it and is drawn
+ * hollow with a dashed cap, because there is no confirmed stock behind it. The
+ * chart is not allowed to hide it and it is not allowed to pretend it is
+ * equivalent either.
  */
 
 const CAP_COLOR: Record<string, string> = {
@@ -37,6 +39,7 @@ const CAP_COLOR: Record<string, string> = {
 /** Round the axis up to a whole dollar so the gridlines are readable. */
 const AXIS_MAX = Math.ceil(CHART_MAX / 3) * 3;
 const TICKS = Array.from({ length: AXIS_MAX / 3 + 1 }, (_, i) => i * 3);
+const DATUM_PCT = (BENCHMARK.low / AXIS_MAX) * 100;
 
 export function LoadProfile() {
   return (
@@ -46,7 +49,7 @@ export function LoadProfile() {
           Published rates · USD per GPU-hour
         </figcaption>
         <p className="d3-tag text-[0.5rem] text-[var(--ink-3)]">
-          Datum = our rate {RATE.display}
+          Datum = lowest bookable {BENCHMARK.display}
         </p>
       </div>
 
@@ -80,12 +83,24 @@ export function LoadProfile() {
               />
             ))}
 
-            {/* datum: our rate, across the whole plot */}
+            {/* the quote band: everything under the datum. Where we land, as
+                a region rather than a point, because a point would be a price. */}
+            <span
+              aria-hidden
+              className="absolute inset-x-0 bottom-0"
+              style={{
+                height: `${DATUM_PCT}%`,
+                background:
+                  "linear-gradient(to top, color-mix(in oklab, var(--accent) 11%, transparent), color-mix(in oklab, var(--accent) 3%, transparent))",
+              }}
+            />
+
+            {/* datum: the lowest confirmed-bookable rate, across the whole plot */}
             <span
               aria-hidden
               className="absolute inset-x-0 h-px"
               style={{
-                bottom: `${(RATE.value / AXIS_MAX) * 100}%`,
+                bottom: `${DATUM_PCT}%`,
                 background: "var(--accent)",
                 boxShadow: "0 0 12px -1px var(--accent)",
               }}
@@ -99,6 +114,7 @@ export function LoadProfile() {
                 const heightPct = (top / AXIS_MAX) * 100;
                 const rangePct = r.high ? ((r.high - r.low) / AXIS_MAX) * 100 : 0;
                 const hollow = kind === "unverified-listing";
+                const datum = Boolean(r.isBenchmark);
 
                 return (
                   <div key={r.id} className="relative flex h-full min-w-0 flex-1 items-end">
@@ -111,8 +127,8 @@ export function LoadProfile() {
                       <div
                         className="absolute inset-0"
                         style={{
-                          background: r.isUs
-                            ? "linear-gradient(to top, color-mix(in oklab, var(--accent) 30%, transparent), color-mix(in oklab, var(--accent) 6%, transparent))"
+                          background: datum
+                            ? "linear-gradient(to top, color-mix(in oklab, var(--accent) 26%, transparent), color-mix(in oklab, var(--accent) 6%, transparent))"
                             : hollow
                               ? "repeating-linear-gradient(135deg, color-mix(in oklab, var(--caution) 22%, transparent) 0 2px, transparent 2px 6px)"
                               : "linear-gradient(to top, color-mix(in oklab, var(--ink) 13%, transparent), color-mix(in oklab, var(--ink) 3%, transparent))",
@@ -136,9 +152,9 @@ export function LoadProfile() {
                       <div
                         className="absolute inset-x-0 top-0"
                         style={{
-                          height: r.isUs ? 3 : 2,
-                          background: cap,
-                          boxShadow: r.isUs ? "0 0 16px -1px var(--accent)" : `0 0 10px -3px ${cap}`,
+                          height: datum ? 3 : 2,
+                          background: datum ? "var(--accent)" : cap,
+                          boxShadow: datum ? "0 0 16px -1px var(--accent)" : `0 0 10px -3px ${cap}`,
                           borderTop: hollow ? `1px dashed ${cap}` : undefined,
                         }}
                       />
@@ -147,6 +163,14 @@ export function LoadProfile() {
                 );
               })}
             </div>
+
+            {/* the band's own label, inside the region it names */}
+            <p
+              className="d3-tag absolute bottom-2 left-2 max-w-[22ch] text-[0.4375rem] leading-relaxed text-[var(--accent)]"
+              style={{ textWrap: "balance" }}
+            >
+              {QUOTE.position} · {QUOTE.label}
+            </p>
           </div>
 
           {/* --- labels under the plot ------------------------------- */}
@@ -155,22 +179,23 @@ export function LoadProfile() {
             {CHART_ROWS.map((r) => {
               const kind = verificationKind(r.sourceId);
               const cap = CAP_COLOR[kind] ?? "var(--ink-2)";
+              const datum = Boolean(r.isBenchmark);
               return (
                 <li key={r.id} className="min-w-0 flex-1">
                   <p
                     className="d3-figure text-[clamp(0.6875rem,1.4vw,0.9375rem)] leading-none"
-                    style={{ color: r.isUs ? "var(--accent)" : "var(--ink)" }}
+                    style={{ color: datum ? "var(--accent)" : "var(--ink)" }}
                   >
                     {r.display}
                   </p>
                   <p className="d3-tag mt-1.5 text-[0.4375rem] leading-tight text-[var(--ink-3)]">
                     {r.provider}
                   </p>
-                  <p className="d3-pip mt-1.5 text-[0.4375rem]" style={{ color: cap }}>
+                  <p className="d3-pip mt-1.5 text-[0.4375rem]" style={{ color: datum ? "var(--accent)" : cap }}>
                     {verificationShort(r.sourceId)}
                   </p>
                   <p className="d3-figure mt-1 text-[0.5625rem] text-[var(--ink-3)]">
-                    {r.isUs ? "datum" : multipleOfOurRate(r.low)}
+                    {datum ? "datum" : multipleOfBenchmark(r.low)}
                   </p>
                 </li>
               );
@@ -187,7 +212,7 @@ export function LoadProfile() {
                 <span
                   key={r.id}
                   className="d3-figure min-w-0 flex-1 text-center text-[0.5625rem] leading-none"
-                  style={{ color: r.isUs ? "var(--accent)" : cap }}
+                  style={{ color: r.isBenchmark ? "var(--accent)" : cap }}
                 >
                   {String(i + 1).padStart(2, "0")}
                 </span>
@@ -201,6 +226,7 @@ export function LoadProfile() {
         {CHART_ROWS.map((r, i) => {
           const kind = verificationKind(r.sourceId);
           const cap = CAP_COLOR[kind] ?? "var(--ink-2)";
+          const datum = Boolean(r.isBenchmark);
           return (
             <li
               key={r.id}
@@ -208,25 +234,25 @@ export function LoadProfile() {
             >
               <span
                 className="d3-figure text-[0.625rem] leading-none"
-                style={{ color: r.isUs ? "var(--accent)" : cap }}
+                style={{ color: datum ? "var(--accent)" : cap }}
               >
                 {String(i + 1).padStart(2, "0")}
               </span>
               <div className="min-w-0">
                 <p className="d3-tag text-[0.5rem] leading-snug text-[var(--ink-2)]">{r.provider}</p>
-                <p className="d3-pip mt-1.5 text-[0.4375rem]" style={{ color: cap }}>
+                <p className="d3-pip mt-1.5 text-[0.4375rem]" style={{ color: datum ? "var(--accent)" : cap }}>
                   {verificationShort(r.sourceId)}
                 </p>
               </div>
               <div className="text-right">
                 <p
                   className="d3-figure text-[0.875rem] leading-none"
-                  style={{ color: r.isUs ? "var(--accent)" : "var(--ink)" }}
+                  style={{ color: datum ? "var(--accent)" : "var(--ink)" }}
                 >
                   {r.display}
                 </p>
                 <p className="d3-figure mt-1.5 text-[0.5625rem] text-[var(--ink-3)]">
-                  {r.isUs ? "datum" : multipleOfOurRate(r.low)}
+                  {datum ? "datum" : multipleOfBenchmark(r.low)}
                 </p>
               </div>
             </li>
@@ -235,9 +261,12 @@ export function LoadProfile() {
       </ol>
 
       <p className="d3-body mt-5 max-w-[74ch] text-[0.75rem] leading-relaxed text-[var(--ink-3)] text-pretty">
-        Hatched columns are published prices we could not confirm as in stock — including the one
-        below our datum, which is cheaper than we are. Ranges are shown at their top value with the
-        range hatched beneath. All rates read {formatAsOfShort(source("ours").accessed)}.
+        The datum is the lowest rate we could confirm as in stock, so multiples are against
+        something a buyer could actually have bought. Hatched columns are published prices we could
+        not confirm — including the one under the datum. The shaded region under the datum is where
+        our own quote falls; it is a band and not a line because the figure depends on the job.
+        Ranges are shown at their top value with the range hatched beneath. All rates read{" "}
+        {formatAsOfShort(source(QUOTE.sourceId).accessed)}.
       </p>
     </figure>
   );

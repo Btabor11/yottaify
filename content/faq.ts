@@ -10,9 +10,10 @@
  */
 
 import { SITE } from "@/config/site";
-import { FLEET_TOTAL, GPUS_PER_NODE, NODE_COUNT, CONTRACT, ACCESS, FACILITY } from "./operator";
+import { FLEET_TOTAL, GPUS_PER_NODE, NODE_COUNT, CONTRACT, ACCESS, FACILITY, SUPPORT, OWNERSHIP } from "./operator";
 import { NODE } from "./hardware";
-import { RATE, PRICE_POSITION } from "./pricing";
+import { QUOTE, PRICE_POSITION, BENCHMARK } from "./pricing";
+import { ASSURANCE } from "./assurance";
 
 export interface Faq {
   id: string;
@@ -65,7 +66,7 @@ export const FAQS: Faq[] = [
     id: "fewer-than-node",
     group: "reserving",
     q: `Can I rent fewer than ${GPUS_PER_NODE} GPUs?`,
-    a: `Yes. The form offers 1–2, 4, ${GPUS_PER_NODE} and ${FLEET_TOTAL}. A partial node shares the box with another tenant's partial allocation; a full node is ${NODE.hbmGbFormatted} GB in one NVLink domain, entirely yours.`,
+    a: `Yes. The form runs from 1–2 GPUs up to all ${FLEET_TOTAL}. A partial node shares the box with another tenant's partial allocation; a full node is ${GPUS_PER_NODE} devices and ${NODE.hbmGbFormatted} GB in one NVLink domain, entirely yours.`,
   },
 
   // --- hardware ------------------------------------------------------------
@@ -102,10 +103,16 @@ export const FAQS: Faq[] = [
 
   // --- commercial ----------------------------------------------------------
   {
+    id: "no-published-rate",
+    group: "commercial",
+    q: "Why is there no price on this site?",
+    a: QUOTE.why,
+  },
+  {
     id: "rate-fixed",
     group: "commercial",
-    q: `Is ${RATE.display} fixed?`,
-    a: `${RATE.full} is the on-demand rate for the initial cohort and is not a promotional rate that expires — it is what the cost structure supports because the building is owned. Committed terms price below it. Any rate you are offered is fixed for your term once it is in the contract.`,
+    q: "Once I have a rate, can it move?",
+    a: "No. Whatever you are quoted is fixed for your term once it is in the contract, and it is not a promotional rate that expires afterwards — it is what an owned building and a small fleet actually support. Committed terms price below the on-demand quote, and how far below depends on term and volume.",
   },
   {
     id: "take-or-pay",
@@ -114,10 +121,16 @@ export const FAQS: Faq[] = [
     a: CONTRACT.body,
   },
   {
+    id: "leases",
+    group: "commercial",
+    q: "Do you offer multi-year leases?",
+    a: `${CONTRACT.inquiry.heading} ${CONTRACT.inquiry.body} ${CONTRACT.inquiry.caveat}`,
+  },
+  {
     id: "cheaper-elsewhere",
     group: "commercial",
-    q: "I have seen cheaper B300 listings. Why would I pay this?",
-    a: `${PRICE_POSITION.body} The argument is availability with a date on it, and every rate on the pricing page carries its source and the date we checked it so you can verify that yourself.`,
+    q: "I have seen cheaper B300 listings. Why would I talk to you?",
+    a: `${PRICE_POSITION.body} ${QUOTE.position} — ${BENCHMARK.display} on the day we checked — and the argument on top of that is availability with a date on it. Every rate on the pricing page carries its source and the date we read it, so none of this has to be taken on trust.`,
   },
   {
     id: "billing",
@@ -131,25 +144,43 @@ export const FAQS: Faq[] = [
     id: "who-are-you",
     group: "operator",
     q: "Who is behind this?",
-    a: `${SITE.name} is an owner-operator: the people who bought the building, specified the power and ordered the hardware are the people you will speak to. ${FACILITY.kind.toLowerCase()} in the ${SITE.location.region}, ${FACILITY.ownership.toLowerCase()}. There is no sales team between you and the operator.`,
+    a: `${SITE.name} is an owner-operator: the people who bought the building and ordered the hardware are the people you will speak to. ${FACILITY.kind.toLowerCase()} in the ${SITE.location.region}, ${FACILITY.ownership.toLowerCase()}, ${OWNERSHIP.short.toLowerCase()}. There is no sales team between you and the operator.`,
+  },
+  {
+    id: "colo",
+    group: "operator",
+    q: "Is this space inside a bigger data centre?",
+    a: `No. ${FACILITY.notColoDetail}`,
+  },
+  {
+    id: "support",
+    group: "operator",
+    q: "What happens at 3am when something breaks?",
+    a: `${SUPPORT.body} ${SUPPORT.caveat}`,
   },
   {
     id: "where-is-it",
     group: "operator",
     q: "Where is the hardware, and can I see it?",
-    a: `${SITE.location.detail}. The street address is not published. If you need to see the facility before signing, ask on the call.`,
+    a: `${SITE.location.detail}. The street address is not published. If you need to see the facility before signing, ask on the call. The building, the power and the physical posture are written up in full on the facility page.`,
   },
   {
     id: "security",
     group: "operator",
     q: "What about security and compliance?",
-    a: "Honestly: we hold no third-party certifications and no SOC 2 report today, and we say so on the page rather than implying otherwise. What you get is a privately owned facility with no other tenants in the building, root on your own node, and a written contract that can carry the data-handling terms your organisation requires.",
+    a: `${ASSURANCE.roadmap.disclaimer} What you do get today is a single-tenant building with no other organisation's hardware or staff in it, root on your own node, and a written contract that can carry the data-handling terms your organisation requires. The frameworks we are pursuing, and where each one stands, are published on the assurance section rather than summarised into a badge.`,
+  },
+  {
+    id: "partner",
+    group: "operator",
+    q: "Do you work with partners rather than customers?",
+    a: "Yes, and we would rather. We are looking for a small number of technical partners — model and application teams, platform and tooling companies, integrators selling to American organisations, and other independent site owners. What that means in practice is negotiable at this stage: early access, capacity on terms that suit the work, joint engineering time, and a direct line to the people running the machines. Say so on the reservation form or email us.",
   },
   {
     id: "why-trust",
     group: "operator",
     q: "You have no customers. Why should I be the first?",
-    a: `Because the first cohort is priced for exactly that risk, and because everything we can show you — hardware, facility, power, timeline — carries a source and a date. We do not have the logos or the uptime history. We have ${NODE_COUNT} nodes, a building, and a rate that does not depend on someone else's capital. Whether that is enough is your call, and we would rather you make it with the full picture.`,
+    a: `Because the first cohort is priced for exactly that risk, and because everything we can show you — hardware, building, people, timeline — carries a source and a date. We do not have the logos or the operating history. We have ${NODE_COUNT} nodes, a building nobody else is in, an owner who answers the phone, and a cost structure that does not depend on someone else's capital. Whether that is enough is your call, and we would rather you make it with the full picture.`,
   },
 ];
 

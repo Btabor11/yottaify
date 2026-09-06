@@ -75,7 +75,7 @@ const COMPANIES = [
   ["Pelagic Data", "Kofi Mensah", "kofi", "pelagic.data"],
 ];
 
-const GPUS = ["1-2", "4", "8", "16"];
+const GPUS = ["1-2", "4", "8", "16", "24", "32", "48"];
 const WORKLOADS = ["nvfp4-training", "fine-tuning", "inference", "research", "other"];
 const STATUSES = [
   ["new", 7],

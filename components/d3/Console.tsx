@@ -4,10 +4,10 @@
  * RESERVATION FORM — a paper form with a switchboard on it.
  *
  * GPU count is a bank of tickets, and beside it an allocation board: the
- * fleet as sixteen cells in two rows of eight, lit to the count chosen. The
- * board is the one place the reader can touch the fleet, and it is honest by
- * construction — there are sixteen cells because there are sixteen devices,
- * and no more can be lit. Target start is a date with quick-set chips.
+ * fleet as one row of eight per node, lit to the count chosen. The board is
+ * the one place the reader can touch the fleet, and it is honest by
+ * construction — there are as many cells as devices, and no more can be lit.
+ * Target start is a date with quick-set chips.
  * Everything else is a ruled field.
  *
  * Same hook, same zod schema, same submit path as before — this file is
@@ -25,7 +25,7 @@ import {
   TARGET_START_FLOOR,
   field,
   FLEET,
-  RATE,
+  QUOTE,
   CONTRACT,
   FOLLOWUP_COPY,
 } from "@/content";
@@ -45,10 +45,16 @@ function readLocation(): string {
   return window.location.search;
 }
 
-/** How many cells an option lights. "16+" lights the whole fleet and says so. */
+/**
+ * How many cells an option lights.
+ *
+ * Options are stored strings ("1-2", "8", "48+"), so this reads the leading
+ * integer and treats a trailing "+" as the whole fleet — which keeps working
+ * when the fleet grows and the rungs change.
+ */
 function litCells(value: string): { lit: number; over: boolean } {
   if (value === "1-2") return { lit: 2, over: false };
-  if (value === "16+") return { lit: FLEET.total, over: true };
+  if (value.endsWith("+")) return { lit: FLEET.total, over: true };
   const n = Number(value);
   return { lit: Number.isFinite(n) ? Math.min(FLEET.total, n) : 0, over: false };
 }
@@ -56,7 +62,7 @@ function litCells(value: string): { lit: number; over: boolean } {
 /** The option a tapped cell should select: the smallest option that covers it. */
 function optionForCell(index: number): string {
   const need = index + 1;
-  const ordered = GPU_COUNT_OPTIONS.filter((o) => o.value !== "16+")
+  const ordered = GPU_COUNT_OPTIONS.filter((o) => !o.value.endsWith("+"))
     .map((o) => ({ value: o.value, n: litCells(o.value).lit }))
     .sort((a, b) => a.n - b.n);
   return (ordered.find((o) => o.n >= need) ?? ordered[ordered.length - 1]).value;
@@ -189,10 +195,10 @@ export function Console() {
 
           <div className="mt-5 grid gap-x-8 gap-y-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,18rem)]">
             <div className="grid gap-2 sm:grid-cols-2">
-              {GPU_COUNT_OPTIONS.map((opt, i) => (
+              {GPU_COUNT_OPTIONS.map((opt) => (
                 <label
                   key={opt.value}
-                  className={`d3-ticket ${i === GPU_COUNT_OPTIONS.length - 1 ? "sm:col-span-2" : ""}`}
+                  className="d3-ticket"
                 >
                   <input
                     type="radio"
@@ -212,8 +218,8 @@ export function Console() {
               ))}
             </div>
 
-            {/* The allocation board. Two rows of eight: two nodes. The
-                radios above are the control; this is the same choice, drawn. */}
+            {/* The allocation board. One row of eight per node. The radios
+                above are the control; this is the same choice, drawn. */}
             <div>
               <div className="flex items-baseline justify-between gap-3">
                 <p className="d3-tag text-[0.5rem] text-[var(--ink-3)]">Allocation board</p>
@@ -250,7 +256,13 @@ export function Console() {
                 {over
                   ? `Exceeds the fleet — ${FLEET.total} is the whole board.`
                   : lit
-                    ? `${lit} of ${FLEET.total} devices${lit === FLEET.gpusPerNode ? " — one full node" : lit === FLEET.total ? " — both nodes" : ""}`
+                    ? `${lit} of ${FLEET.total} devices${
+                        lit === FLEET.total
+                          ? ` — all ${FLEET.nodes} nodes`
+                          : lit % FLEET.gpusPerNode === 0
+                            ? ` — ${lit / FLEET.gpusPerNode === 1 ? "one full node" : `${lit / FLEET.gpusPerNode} full nodes`}`
+                            : ""
+                      }`
                     : `${FLEET.nodes} nodes × ${FLEET.gpusPerNode} devices. Pick a count.`}
               </p>
             </div>
@@ -410,7 +422,7 @@ export function Console() {
                 v: form.values.startDate ? formatChosen(form.values.startDate) : "Not set",
                 set: Boolean(form.values.startDate),
               },
-              { k: "At", v: RATE.fullShort, set: true },
+              { k: "Rate", v: QUOTE.short, set: true },
             ].map((cell) => (
               <div key={cell.k} className="bg-[var(--bg)] px-4 py-3">
                 <dt className="d3-tag text-[0.4375rem] text-[var(--ink-3)]">{cell.k}</dt>

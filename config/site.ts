@@ -25,9 +25,12 @@ export const SITE = {
 
   /** Headline promise. The one sentence the whole site exists to deliver. */
   tagline: "B300 capacity in days, not months.",
-  /** ~150 char meta description. */
+  /**
+   * ~160 char meta description. No rate: the site does not publish one, and a
+   * figure in the SERP snippet would be the loudest place to break that.
+   */
   description:
-    "Sixteen NVIDIA B300 GPUs in two 8-GPU NVLink nodes, in a privately owned Arkansas facility. Bare metal, $6.75/GPU-hour on-demand, available November 2026.",
+    "Forty-eight NVIDIA B300 GPUs in six 8-GPU NVLink nodes, in a privately owned Arkansas warehouse. Bare metal, single tenant, American owned, 24/7 on-site. November 2026.",
 
   /** Public domain. DNS, TLS, and mailboxes still need to exist in production. */
   domain: "yottaify.com",

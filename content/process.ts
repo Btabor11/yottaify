@@ -11,7 +11,7 @@
 import { SITE } from "@/config/site";
 import { FLEET_TOTAL, GPUS_PER_NODE, CONTRACT, ACCESS } from "./operator";
 import { NODE } from "./hardware";
-import { RATE } from "./pricing";
+import { QUOTE } from "./pricing";
 
 export interface ProcessStep {
   id: string;
@@ -60,11 +60,11 @@ export const BEFORE_CHECKLIST: { label: string; detail: string }[] = [
   {
     label: "Security and procurement requirements",
     detail:
-      "Anything your organisation will ask us for before signing: vendor forms, insurance, data handling terms. Better to know on the first call than in week six.",
+      "Anything your organisation will ask us for before signing: vendor forms, insurance, data handling terms, and which certifications are hard requirements rather than preferences. Better to know on the first call than in week six — and it changes the order we work through the roadmap in.",
   },
   {
     label: "Term appetite and who signs",
-    detail: `On-demand at ${RATE.full}, or ${CONTRACT.model.toLowerCase()} for ${CONTRACT.termYears} at a lower rate. Knowing who has budget authority shortens everything.`,
+    detail: `On-demand, or ${CONTRACT.model.toLowerCase()} for ${CONTRACT.termYears} at a lower rate. The quote is set against these two answers, so having them ready is what turns the first call into a number. Knowing who has budget authority shortens everything.`,
   },
   {
     label: "What would make you say no",
@@ -90,13 +90,13 @@ export const PROCESS: ProcessPhase[] = [
       {
         id: "size",
         title: "Size the job against one node",
-        body: `${NODE.hbmGbFormatted} GB in one coherent domain is the argument. Decide whether your model, KV cache and activations fit in it, or whether you need both nodes.`,
+        body: `${NODE.hbmGbFormatted} GB in one coherent domain is the argument. Decide whether your model, KV cache and activations fit in it, or whether the job needs more than one node.`,
         actor: "you",
       },
       {
         id: "estimate",
         title: "Run the arithmetic",
-        body: "The estimator on the pricing page is rate × GPUs × hours against every published rate, including ours. No assumptions of ours in the number.",
+        body: "The estimator on the pricing page is rate × GPUs × hours against every published rate we could find. It prices the alternatives, not us — ours is the one line that is set on the call.",
         actor: "you",
       },
     ],
@@ -154,7 +154,7 @@ export const PROCESS: ProcessPhase[] = [
       {
         id: "terms",
         title: "Term sheet",
-        body: `A one-page summary of what was agreed: capacity, rate, term, start. ${CONTRACT.model} terms price below ${RATE.display}; how far below depends on term and volume.`,
+        body: `A one-page summary of what was agreed: capacity, rate, term, start. This is where the number appears — quoted against your job, not read off a page. ${QUOTE.position}, and ${CONTRACT.model.toLowerCase()} terms price below that again.`,
         actor: "us",
       },
       {

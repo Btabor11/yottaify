@@ -1,22 +1,33 @@
-import { PRICE_ROWS, type PriceRow } from "@/content";
+import { PRICE_ROWS, BENCHMARK_ROW_ID, type PriceRow } from "@/content";
 
 /**
  * Transparent arithmetic for the cost estimator. Not a quote and not a claim —
- * it is `rate × gpus × hours` on the published rates already visible on the
- * page, with every input under the user's control.
+ * it is `rate × gpus × hours` on the published third-party rates already
+ * visible on the page, with every input under the user's control.
  *
- * Shared by all three directions so the numbers can never diverge between them.
+ * Our own rate is deliberately not in here. It is not in `PRICE_ROWS`, it is
+ * not importable from `@/content`, and this module runs inside a client
+ * component — so anything it touched would ship in the bundle. What the
+ * estimator prices is the alternatives; where we land relative to them is
+ * stated in words (`QUOTE` in content/pricing.ts) and settled on the call.
  */
 
 export interface EstimateRow {
   row: PriceRow;
   low: number;
   high: number | null;
-  /** Difference against our own rate, low end to low end. Positive = they cost more. */
-  deltaVsOurs: number;
+  /**
+   * Difference against the benchmark — the lowest rate anyone could confirm as
+   * in stock — low end to low end. Positive = this row costs more than the
+   * cheapest thing a buyer could actually have bought on the day we checked.
+   */
+  deltaVsBenchmark: number;
 }
 
-export function estimate(gpus: number, hours: number): { rows: EstimateRow[]; ours: EstimateRow } {
+export function estimate(
+  gpus: number,
+  hours: number,
+): { rows: EstimateRow[]; benchmark: EstimateRow } {
   const clean = (n: number) => (Number.isFinite(n) && n > 0 ? n : 0);
   const g = clean(gpus);
   const h = clean(hours);
@@ -25,13 +36,13 @@ export function estimate(gpus: number, hours: number): { rows: EstimateRow[]; ou
     row,
     low: row.low * g * h,
     high: typeof row.high === "number" ? row.high * g * h : null,
-    deltaVsOurs: 0,
+    deltaVsBenchmark: 0,
   }));
 
-  const ours = rows.find((r) => r.row.isUs)!;
-  for (const r of rows) r.deltaVsOurs = r.low - ours.low;
+  const benchmark = rows.find((r) => r.row.id === BENCHMARK_ROW_ID)!;
+  for (const r of rows) r.deltaVsBenchmark = r.low - benchmark.low;
 
-  return { rows, ours };
+  return { rows, benchmark };
 }
 
 /** Whole dollars. Fractions of a cent on a six-figure number are noise. */

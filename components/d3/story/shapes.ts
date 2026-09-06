@@ -255,11 +255,27 @@ function meter(n: number, r: () => number): Vec[] {
   return out;
 }
 
-/** 03 — the bus. Two rails, sixteen taps, one riser. */
+/**
+ * 03 — the bus. One rail per node, one tap per device, one riser.
+ *
+ * Rail count is `taps / perRail`, so the drawing follows the fleet rather than
+ * a number typed in here. Everything vertical — tap length, device height, the
+ * gap above the rail — is a fraction of the rail pitch, because the pitch is
+ * what shrinks when nodes are added. Fixed heights read fine at two rails and
+ * collide at six.
+ */
 function bus(n: number, r: () => number, taps: number, perRail: number): Vec[] {
   const out: Vec[] = [];
-  const rails = taps / perRail;
-  const railY = rails === 2 ? [0.95, -0.95] : Array.from({ length: rails }, (_, i) => 1.4 - (i / (rails - 1)) * 2.8);
+  const rails = Math.max(1, Math.round(taps / perRail));
+  /** Total vertical span of the stack. Wider than the two-rail case needed. */
+  const SPAN = 3.4;
+  const pitchY = rails > 1 ? SPAN / (rails - 1) : 0;
+  const railY = Array.from({ length: rails }, (_, i) => (rails > 1 ? SPAN / 2 - i * pitchY : 0));
+  /** Devices always sit above their rail; at two rails there is room for more. */
+  const tapLen = rails > 1 ? Math.min(0.5, pitchY * 0.38) : 0.5;
+  const devH = rails > 1 ? Math.min(0.34, pitchY * 0.3) : 0.34;
+  const devW = Math.min(0.6, (SPAN / rails) * 1.1 + 0.2);
+
   const x0 = -4.6;
   const x1 = 4.6;
   const railPts = Math.floor(n * 0.36);
@@ -269,18 +285,17 @@ function bus(n: number, r: () => number, taps: number, perRail: number): Vec[] {
   }
   const tapPts = Math.floor(n * 0.28);
   const devPts = Math.floor(n * 0.3);
-  const pitch = (x1 - x0 - 1.2) / (perRail - 1);
+  const pitch = perRail > 1 ? (x1 - x0 - 1.2) / (perRail - 1) : 0;
   for (let i = 0; i < taps; i++) {
     const rail = Math.floor(i / perRail);
     const col = i % perRail;
     const x = x0 + 0.6 + col * pitch;
-    const y = railY[rail];
-    const up = rail === 0 ? 1 : -1;
-    segment([x, y, 0], [x, y + up * 0.5, 0], Math.floor(tapPts / taps), r, out, 0.03);
-    boxEdges([x, y + up * 0.68, 0], [0.6, 0.34, 0.14], Math.floor(devPts / taps), r, out);
+    const y = railY[rail] ?? 0;
+    segment([x, y, 0], [x, y + tapLen, 0], Math.floor(tapPts / taps), r, out, 0.03);
+    boxEdges([x, y + tapLen + devH * 0.5, 0], [devW, devH, 0.14], Math.floor(devPts / taps), r, out);
   }
   const riser = n - out.length;
-  segment([x0 - 0.5, -1.9, 0], [x0 - 0.5, 2.6, 0], Math.max(0, riser), r, out, 0.03);
+  segment([x0 - 0.5, -SPAN / 2 - 0.4, 0], [x0 - 0.5, SPAN / 2 + 1.1, 0], Math.max(0, riser), r, out, 0.03);
   return out;
 }
 
@@ -467,9 +482,9 @@ export function device(n: number, r: () => number, mask: DeviceMask | null): Vec
 export interface ShapeInputs {
   /** The module's silhouette for the device shape; null falls back to a slab. */
   device: DeviceMask | null;
-  /** Number of devices in the fleet. Taps on the bus. */
+  /** Number of devices in the fleet. Taps on the bus, across one rail per node. */
   fleet: number;
-  /** Devices per node. Packages on the board, taps per rail. */
+  /** Devices per node. Packages on the board, and taps per rail. */
   perNode: number;
   /** HBM stacks per device. */
   stacks: number;

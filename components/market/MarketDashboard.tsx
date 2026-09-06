@@ -11,6 +11,7 @@ import { HistoryLines } from "./HistoryLines";
 import { SourcesLedger } from "./SourcesLedger";
 import { ProviderDetail } from "./ProviderDetail";
 import { FloorMount } from "./floor/FloorMount";
+import { railRate } from "./format";
 
 /**
  * The market page's state lives here: which day is selected, which provider
@@ -57,7 +58,7 @@ export function MarketDashboard({ latest, history }: { latest: Snapshot | null; 
 
         <FloorMount snap={snap} hover={focus} onHover={setHover} onPin={(id) => setPinned((p) => (p === id ? null : id))} />
 
-        {focused && <ProviderDetail digest={focused} ourRate={snap.ourRate} onClose={() => { setPinned(null); setHover(null); }} pinned={pinned === focused.provider} />}
+        {focused && <ProviderDetail digest={focused} rail={railRate(snap)} onClose={() => { setPinned(null); setHover(null); }} pinned={pinned === focused.provider} />}
       </section>
 
       <section aria-labelledby="spread-h" data-r-group className="grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-16">

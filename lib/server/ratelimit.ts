@@ -1,7 +1,7 @@
 /**
  * Soft per-process rate limit. On serverless this is per-instance, so it is a
  * speed bump for a naive bot, not a wall. It is deliberately not a dependency
- * on Redis or Upstash: a sixteen-GPU fleet does not need distributed rate
+ * on Redis or Upstash: a forty-eight-GPU fleet does not need distributed rate
  * limiting to protect a lead form. If that changes, swap the Map for KV here
  * and nothing else moves.
  */

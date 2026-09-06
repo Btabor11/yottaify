@@ -1,4 +1,17 @@
-import type { StockSignal } from "@/lib/market/types";
+import type { Snapshot, StockSignal } from "@/lib/market/types";
+
+/**
+ * The reference line every chart on this page is drawn against: the lowest
+ * rate any source confirmed as actually in stock.
+ *
+ * It used to be a rate of ours. It is not any more — the site does not publish
+ * one — and this is the better datum regardless, because it is the only figure
+ * on the page a reader could act on today. Falls back to the median when
+ * nothing was confirmed bookable, and to null when there is nothing at all.
+ */
+export function railRate(snap: Snapshot): number | null {
+  return snap.lowestBookable?.usdPerGpuHour ?? snap.medianOnDemand;
+}
 
 export const usd = (n: number | null | undefined, dp = 2): string => (n == null ? "—" : `$${n.toFixed(dp)}`);
 export const pct = (n: number | null | undefined, dp = 0): string => (n == null ? "—" : `${(n * 100).toFixed(dp)}%`);

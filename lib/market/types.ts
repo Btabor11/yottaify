@@ -164,7 +164,13 @@ export interface Snapshot {
   /** YYYY-MM-DD, UTC. One snapshot per day; a re-run replaces it. */
   day: string;
   run: RunSummary;
-  ourRate: number;
+  /**
+   * There is deliberately no rate of ours on the snapshot. It used to carry
+   * one and the dashboard drew it as a rail, which meant the figure was
+   * serialised into the page for anyone to read. The site does not publish our
+   * rate — see QUOTE in content/pricing.ts — so the reference line is now
+   * `lowestBookable`, which is the honest datum for a market page anyway.
+   */
   providers: ProviderDigest[];
   /** getdeploying's "N of M configs in stock", when read. */
   inStock: { count: number; total: number; providers: number; sourceId: string; evidence: Evidence } | null;

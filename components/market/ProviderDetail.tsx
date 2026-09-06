@@ -6,8 +6,8 @@ import { EvidenceLink } from "./EvidenceLink";
 import { STOCK_GLYPH, STOCK_TOKEN, pct, usd } from "./format";
 
 /** The table view for one seller: every figure with its evidence. */
-export function ProviderDetail({ digest: p, ourRate, onClose, pinned }: { digest: ProviderDigest; ourRate: number; onClose: () => void; pinned: boolean }) {
-  const vsOurs = p.published ? p.published.usdPerGpuHour / ourRate : null;
+export function ProviderDetail({ digest: p, rail, onClose, pinned }: { digest: ProviderDigest; rail: number | null; onClose: () => void; pinned: boolean }) {
+  const vsRail = p.published && rail ? p.published.usdPerGpuHour / rail : null;
   return (
     <aside className="d3-panel d3-ticks grid gap-6 p-6 md:grid-cols-[minmax(0,18rem)_1fr] md:gap-10 md:p-8" aria-live="polite">
       <div>
@@ -24,7 +24,7 @@ export function ProviderDetail({ digest: p, ourRate, onClose, pinned }: { digest
         </p>
         <dl className="mt-5 grid grid-cols-2 gap-4">
           <div><dt className="d3-tag text-[var(--ink-3)]">Spread</dt><dd className="d3-figure mt-1 text-[1.125rem] text-[var(--ink)]">{pct(p.spread, 1)}</dd></div>
-          <div><dt className="d3-tag text-[var(--ink-3)]">vs ours</dt><dd className="d3-figure mt-1 text-[1.125rem] text-[var(--ink)]">{vsOurs == null ? "—" : `${vsOurs.toFixed(2)}×`}</dd></div>
+          <div><dt className="d3-tag text-[var(--ink-3)]">vs {MARKET.floor.legend.rail.toLowerCase()}</dt><dd className="d3-figure mt-1 text-[1.125rem] text-[var(--ink)]">{vsRail == null ? "—" : `${vsRail.toFixed(2)}×`}</dd></div>
         </dl>
       </div>
 

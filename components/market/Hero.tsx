@@ -30,11 +30,10 @@ export function Hero({ snap, dayCount }: { snap: Snapshot; dayCount: number }) {
           {MARKET.standfirst}
         </p>
 
-        <dl className="mt-10 grid grid-cols-2 gap-px border border-[var(--rule-strong)] bg-[var(--rule-strong)] sm:grid-cols-4" data-r>
+        <dl className="mt-10 grid grid-cols-2 gap-px border border-[var(--rule-strong)] bg-[var(--rule-strong)] sm:grid-cols-3" data-r>
           <Stat label="Median published on-demand" value={usd(snap.medianOnDemand)} sub={`${snap.providers.filter((p) => p.low != null).length} sellers`} />
           <Stat label="Lowest listed" value={usd(snap.lowestListed?.usdPerGpuHour)} sub={snap.lowestListed ? `${PROVIDER_LABEL[snap.lowestListed.provider]} via ${snap.lowestListed.sourceId}` : "—"} />
-          <Stat label="Lowest bookable" value={usd(snap.lowestBookable?.usdPerGpuHour)} sub={snap.lowestBookable ? `${PROVIDER_LABEL[snap.lowestBookable.provider]} via ${snap.lowestBookable.sourceId}` : "none confirmed"} />
-          <Stat label={MARKET.ourRail} value={usd(snap.ourRate)} sub={MARKET.ourRailNote} accent />
+          <Stat label={MARKET.railLabel} value={usd(snap.lowestBookable?.usdPerGpuHour)} sub={snap.lowestBookable ? `${PROVIDER_LABEL[snap.lowestBookable.provider]} via ${snap.lowestBookable.sourceId}` : "none confirmed"} accent />
         </dl>
       </div>
 

@@ -230,7 +230,6 @@ function check(label, hits) {
     [hw, "18", "NVLink 5 links = 18"],
     [hw, "1.8 TB/s", "NVLink bandwidth ~1.8 TB/s"],
     [hw, "2304", "node HBM = 2,304 GB"],
-    [pr, "6.75", "our rate $6.75"],
     [pr, "7.85", "median low $7.85"],
     [pr, "7.87", "median high $7.87"],
     [pr, "6.50", "neocloud low $6.50"],
@@ -240,10 +239,8 @@ function check(label, hits) {
     [pr, "17.80", "AWS $17.80"],
     [pr, "4.25", "reserved low $4.25"],
     [pr, "5.62", "reserved high $5.62"],
-    [op, "16", "fleet = 16 B300s"],
-    [op, "35", "load ~35 kW"],
-    [op, "97", "~97 A"],
-    [op, "208", "208 V"],
+    [op, "FLEET_TOTAL = 48", "fleet = 48 B300s"],
+    [op, "GPUS_PER_NODE = 8", "8 GPUs per node"],
   ];
   check(
     "verified payload present in content/",
@@ -267,11 +264,117 @@ function check(label, hits) {
       if (wasInBlock || opens || t.startsWith("//")) return;
       const code = line.split("//")[0];
       if (/[">\s]\$\d+(\.\d\d)?\b/.test(code)) hits.push(`price literal  ${f}:${i + 1}  ${t.slice(0, 80)}`);
-      if (/\b(288|2,?304|7\.89|6\.75|17\.80|15\.00|35 ?kW|97 ?A)\b/.test(code) && !/SOURCE|source|href/.test(code))
+      if (/\b(288|2,?304|7\.89|17\.80|15\.00)\b/.test(code) && !/SOURCE|source|href/.test(code))
         hits.push(`spec literal   ${f}:${i + 1}  ${t.slice(0, 80)}`);
     });
   }
   check("no price or spec literal typed into a component", hits);
+}
+
+/* ---- 4b. our own rate is not published anywhere ------------------------
+   The site deliberately does not print a per-GPU-hour figure for us: the
+   number is quoted on the call, against the job. That is a policy, and a
+   policy that lives only in someone's memory gets broken by the next person
+   who adds a stat tile. So it is checked.
+
+   Note this is the *inverse* of check 3. Third-party rates must be present in
+   content/; ours must be absent from the entire tree. */
+{
+  const hits = [];
+  // Trailing \w rules out `max-w-[6.75em]` and friends: a CSS measure that
+  // happens to share the digits is not a leak.
+  const RATE = /(?<![.\d])6\.75(?![\w%])/;
+  for (const f of files) {
+    read(f).split("\n").forEach((line, i) => {
+      if (RATE.test(line)) hits.push(`our rate as a literal  ${f}:${i + 1}  ${line.trim().slice(0, 80)}`);
+    });
+  }
+
+  const pr = read("content/pricing.ts");
+  if (/\bOUR_RATE\b|export const RATE\b/.test(pr))
+    hits.push('content/pricing.ts still exports a rate constant — the figure is quoted, not published');
+  if (/\bisUs\b/.test(pr))
+    hits.push('content/pricing.ts still carries an "isUs" row flag — the table has no row for us');
+  if (/id:\s*"ours"[\s\S]{0,400}?usdPerGpuHour/.test(pr))
+    hits.push('content/pricing.ts has a priced "ours" row in PRICE_ROWS');
+  if (!/export const QUOTE\b/.test(pr))
+    hits.push("content/pricing.ts must export QUOTE — the position we state instead of a figure");
+
+  // JSON-LD is the easiest place to leak a number without seeing it on screen.
+  const schema = read("components/shared/pricingSchema.ts");
+  if (/\bprice:\s*[\d"']/.test(schema))
+    hits.push("components/shared/pricingSchema.ts publishes a price in structured data");
+
+  // Same for the market snapshot, which is serialised to the client whole.
+  if (/\bourRate\b/.test(read("lib/market/types.ts")))
+    hits.push("lib/market/types.ts puts our rate in the client snapshot payload");
+
+  check("our own per-GPU-hour rate appears nowhere", hits);
+}
+
+/* ---- 4c. every certification is marked as not held ---------------------
+   content/assurance.ts names frameworks a buyer will ask for. Naming them is
+   fine; the failure mode is one of them quietly reading as held — which is
+   also the single fastest way to fail a real procurement review.
+
+   The structure is what makes the file safe to publish, so the structure is
+   what gets checked: every entry carries `held: false`, every status is one
+   the vocabulary allows, and none of the allowed statuses mean "held". */
+{
+  const hits = [];
+  const src = read("content/assurance.ts");
+
+  const vocab = src.match(/export const CERT_STATUS = \{([\s\S]*?)\n\} as const;/)?.[1] ?? "";
+  const statuses = [...vocab.matchAll(/^\s*"?([a-z-]+)"?:/gm)].map((m) => m[1]);
+  if (statuses.length === 0) hits.push("CERT_STATUS vocabulary not found in content/assurance.ts");
+  for (const s of statuses)
+    if (/held|certified|awarded|compliant|achieved/i.test(s))
+      hits.push(`CERT_STATUS."${s}" reads as an achievement — no status may mean "held"`);
+
+  const block = src.match(/export const CERTIFICATIONS[\s\S]*?\n\];/)?.[0] ?? "";
+  if (!block) hits.push("CERTIFICATIONS array not found in content/assurance.ts");
+
+  const entries = [...block.matchAll(/\bstatus:\s*"([a-z-]+)"/g)].map((m) => m[1]);
+  const held = [...block.matchAll(/\bheld:\s*(true|false)\b/g)].map((m) => m[1]);
+  if (held.includes("true")) hits.push('a certification is marked held: true — none are held');
+  if (entries.length !== held.length)
+    hits.push(`${entries.length} certification statuses but ${held.length} held: flags — every entry declares one`);
+  for (const s of entries)
+    if (!statuses.includes(s)) hits.push(`certification status "${s}" is outside CERT_STATUS`);
+
+  // The disclaimer sits above the table and is what makes it publishable.
+  const disclaimer = src.match(/disclaimer:\s*\n?\s*"([^"]+)"/)?.[1] ?? "";
+  if (!/\bnot\b|\bno\b|\bnone\b|\bnothing\b/i.test(disclaimer))
+    hits.push("the roadmap disclaimer does not disclaim anything");
+
+  check("every certification is named as planned, never as held", hits);
+}
+
+/* ---- 4d. withdrawn electrical figures stay withdrawn -------------------
+   The load, current and service figures the site used to publish were
+   calculated for a two-node build. The fleet is six nodes, so they are wrong,
+   and re-stating them scaled would be an estimate wearing a measurement's
+   clothes. They come back when the service is specified and metered — which
+   means editing content/operator.ts deliberately, not by a figure drifting
+   back into a component. See the POWER header there. */
+{
+  const hits = [];
+  const op = read("content/operator.ts");
+  const power = op.match(/export const POWER = \{[\s\S]*?\n\} as const;/)?.[0] ?? "";
+  if (!power) hits.push("POWER block not found in content/operator.ts");
+  for (const key of ["loadKw", "amps", "voltage", "phase", "service"])
+    if (new RegExp(`^\\s*${key}:`, "m").test(power))
+      hits.push(`POWER.${key} is back — the six-node service is not specified yet`);
+
+  const STALE = /(?<![.\d])(35 ?kW|97 ?A\b|208 ?V)/;
+  for (const f of files) {
+    read(f).split("\n").forEach((line, i) => {
+      const t = line.trim();
+      if (t.startsWith("*") || t.startsWith("//") || t.startsWith("/*")) return;
+      if (STALE.test(line)) hits.push(`stale electrical figure  ${f}:${i + 1}  ${t.slice(0, 80)}`);
+    });
+  }
+  check("the two-node electrical figures have not crept back", hits);
 }
 
 /* ---- 5. forbidden claims ----------------------------------------------
@@ -288,8 +391,8 @@ function check(label, hits) {
     "The cheapest B300-class capacity we could confirm as actually available",
     // Items in the "what we do not have" ledger. The heading carries the
     // negation, the list items are bare nouns.
-    '"Uptime history"',
     '"An SLA"',
+    '"Certifications in hand"',
     // Options in the follow-up's "what do you need from a provider" multi-select.
     // The client is telling us what they need; we are not claiming to have it.
     '{ value: "soc2", label: "SOC 2 report" }',
@@ -314,6 +417,11 @@ function check(label, hits) {
   // fetchers pick the cheapest listing *as data*; that is a variable, not
   // a sentence. Everything that renders is still scanned.
   const NEVER_RENDERED = /^lib\/(server|market)\//;
+  // The certification roadmap has to be able to write "SOC 2" — that is its
+  // subject. It is exempt from the compliance-badge pattern ONLY, and only
+  // because check 4c proves structurally that every framework in it is marked
+  // as not held. Remove that check and this exemption becomes a lie.
+  const ROADMAP = "content/assurance.ts";
   for (const f of files) {
     if (NEVER_RENDERED.test(f)) continue;
     read(f).split("\n").forEach((line, i) => {
@@ -321,6 +429,7 @@ function check(label, hits) {
       if (t.startsWith("*") || t.startsWith("//") || t.startsWith("/*")) return;
       if (ACKNOWLEDGED.some((a) => line.includes(a))) return;
       for (const [re, why] of patterns) {
+        if (f === ROADMAP && why === "compliance badge") continue;
         if (!re.test(line)) continue;
         if (NEG.test(line)) continue; // disclaimed, not claimed
         hits.push(`${why}: ${f}:${i + 1}  ${t.slice(0, 80)}`);

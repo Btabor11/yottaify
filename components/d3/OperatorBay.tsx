@@ -1,7 +1,7 @@
+import Link from "next/link";
 import { SITE } from "@/config/site";
-import { SECTIONS, FACILITY, POWER, FLEET, ACCESS, CONTRACT, TIMELINE, CANDOUR, ABOUT, TEAM, NAME_ORIGIN, formatAsOf } from "@/content";
+import { SECTIONS, FACILITY, FLEET, ACCESS, CONTRACT, TIMELINE, CANDOUR, ABOUT, TEAM, NAME_ORIGIN, OWNERSHIP, SUPPORT, PARTNERS, FACILITY_SHEET, formatAsOf } from "@/content";
 import { Bay } from "./Bay";
-import { OneLine } from "./OneLine";
 
 /**
  * Sheet 03 — the operator, and the honest section.
@@ -10,6 +10,12 @@ import { OneLine } from "./OneLine";
  * appears anywhere on the page. Saying "we are new and it is priced in" in
  * the first person, at full volume, reads as confidence; the same sentence
  * set small reads as a disclaimer someone was made to include.
+ *
+ * The single-line electrical drawing used to open this section. It now lives
+ * on /facility: a reader deciding where to put a model does not open with a
+ * question about service voltage, and leading with one made the company read
+ * as an electrical contractor. What opens the section instead is the thing a
+ * buyer actually weighs — who owns it, who can touch it, and who picks up.
  */
 export function OperatorBay() {
   return (
@@ -25,27 +31,26 @@ export function OperatorBay() {
         />
 
         {/* --- facility ------------------------------------------------- */}
-        <div className="grid items-start gap-x-14 gap-y-10 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
-          <div data-r>
-            <OneLine />
-          </div>
-
+        <div className="grid items-start gap-x-14 gap-y-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
           <div>
             <h3
               className="d3-display max-w-[7.7em] text-[clamp(2rem,5vw,4rem)] text-balance"
               data-load
               data-load-from="300"
             >
-              {FACILITY.advantage}. {FACILITY.ownership}.
+              {FACILITY.notColo}. {FACILITY.ownership}.
             </h3>
             <p className="d3-body mt-5 max-w-[54ch] text-[0.9375rem] text-[var(--ink-2)] text-pretty" data-r>
+              {FACILITY.notColoDetail}
+            </p>
+            <p className="d3-body mt-4 max-w-[54ch] text-[0.9375rem] text-[var(--ink-2)] text-pretty" data-r>
               {FACILITY.advantageDetail}
             </p>
 
             <dl className="mt-9 grid gap-px border border-[var(--rule-strong)] bg-[var(--rule)] sm:grid-cols-2" data-r-group>
               {[
                 ["Fleet", FLEET.shape],
-                ["Power", POWER.summary],
+                ["Building", `${FACILITY.kind}, ${FACILITY.ownership.toLowerCase()}. Single tenant.`],
                 ["Access", `${ACCESS.model} — ${ACCESS.interface}`],
                 ["Contract", `${CONTRACT.model}, ${CONTRACT.termYears}`],
               ].map(([k, v]) => (
@@ -55,6 +60,57 @@ export function OperatorBay() {
                 </div>
               ))}
             </dl>
+
+            <Link href="/facility" className="d3-btn d3-btn-ghost mt-7">
+              {FACILITY_SHEET.eyebrow} sheet — the building and the service
+              <span aria-hidden>→</span>
+            </Link>
+          </div>
+
+          {/* Ownership and support: the two questions that follow "who are you". */}
+          <div className="flex flex-col gap-8" data-r-group>
+            <div className="d3-panel p-6">
+              <p className="d3-tag text-[var(--accent)]">{OWNERSHIP.eyebrow}</p>
+              <p className="d3-display mt-3 text-[1.5rem]" style={{ ["--wght" as string]: 720 }}>
+                {OWNERSHIP.headline}
+              </p>
+              <p className="d3-body mt-3 text-[0.8125rem] text-[var(--ink-2)] text-pretty">
+                {OWNERSHIP.body}
+              </p>
+              <dl className="mt-5">
+                {OWNERSHIP.facts.map((f) => (
+                  <div key={f.label} className="border-t border-[var(--rule)] py-2.5">
+                    <dt className="d3-tag text-[0.4375rem] text-[var(--ink-3)]">{f.label}</dt>
+                    <dd className="d3-body mt-1 text-[0.75rem] leading-snug text-[var(--ink-2)] text-pretty">
+                      {f.detail}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+
+            <div className="d3-panel p-6">
+              <p className="d3-tag text-[var(--accent)]">{SUPPORT.eyebrow}</p>
+              <p className="d3-display mt-3 text-[1.5rem]" style={{ ["--wght" as string]: 720 }}>
+                {SUPPORT.headline}
+              </p>
+              <p className="d3-body mt-3 text-[0.8125rem] text-[var(--ink-2)] text-pretty">
+                {SUPPORT.body}
+              </p>
+              <dl className="mt-5">
+                {SUPPORT.channels.map((c) => (
+                  <div key={c.label} className="border-t border-[var(--rule)] py-2.5">
+                    <dt className="d3-tag text-[0.4375rem] text-[var(--ink-3)]">{c.label}</dt>
+                    <dd className="d3-body mt-1 text-[0.75rem] leading-snug text-[var(--ink-2)] text-pretty">
+                      {c.detail}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="mt-5 border-l-2 border-[var(--caution)] pl-3 d3-body text-[0.75rem] text-[var(--ink-3)] text-pretty">
+                {SUPPORT.caveat}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -138,10 +194,50 @@ export function OperatorBay() {
           </div>
         </div>
 
+        {/* --- partnerships ---------------------------------------------- */}
+        <div id="partners" className="mt-16 scroll-mt-24 md:mt-24">
+          <p className="d3-tag border-b border-[var(--rule-strong)] pb-2 text-[var(--ink-3)]">
+            {SECTIONS.operator.index}.3 — {PARTNERS.eyebrow}
+          </p>
+          <div className="mt-6 grid gap-x-14 gap-y-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <div>
+              <h3
+                className="d3-display max-w-[8em] text-[clamp(1.75rem,4.2vw,3.25rem)] text-balance"
+                data-load
+                data-load-from="300"
+              >
+                {PARTNERS.heading}
+              </h3>
+              <p className="d3-body mt-4 max-w-[54ch] text-[0.9375rem] text-[var(--ink-2)] text-pretty" data-r>
+                {PARTNERS.body}
+              </p>
+              <p className="d3-body mt-4 max-w-[54ch] text-[0.9375rem] text-[var(--ink-2)] text-pretty" data-r>
+                {PARTNERS.terms}
+              </p>
+              <a href={`mailto:${SITE.email.general}`} className="d3-btn d3-btn-ghost mt-7">
+                {PARTNERS.cta}
+                <span aria-hidden>→</span>
+              </a>
+              <p className="d3-tag mt-3 text-[0.4375rem] text-[var(--ink-3)]">{PARTNERS.ctaNote}</p>
+            </div>
+
+            <ul className="grid gap-px border border-[var(--rule-strong)] bg-[var(--rule)] sm:grid-cols-2" data-r-group>
+              {PARTNERS.looking.map((p) => (
+                <li key={p.label} className="bg-[var(--surface)] p-5">
+                  <p className="d3-display text-[1.0625rem]" style={{ ["--wght" as string]: 720 }}>
+                    {p.label}
+                  </p>
+                  <p className="d3-body mt-2 text-[0.8125rem] text-[var(--ink-2)] text-pretty">{p.detail}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
         {/* --- schedule -------------------------------------------------- */}
         <div className="mt-16 md:mt-24">
           <div className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-2 border-b border-[var(--rule-strong)] pb-2">
-            <p className="d3-tag text-[var(--ink-3)]">{SECTIONS.operator.index}.3 — Schedule</p>
+            <p className="d3-tag text-[var(--ink-3)]">{SECTIONS.operator.index}.4 — Schedule</p>
             <p className="d3-tag text-[0.5rem] text-[var(--ink-3)]">
               Target <span className="d3-figure text-[var(--accent)]">{TIMELINE.target}</span>
             </p>

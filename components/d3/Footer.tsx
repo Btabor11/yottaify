@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { SITE } from "@/config/site";
-import { FOOTER, FORM_COPY, FLEET, RATE, resolveFooterHref } from "@/content";
+import { FOOTER, FORM_COPY, FLEET, OWNERSHIP, resolveFooterHref } from "@/content";
 import { D3Logo } from "./Chrome";
 
 /**
@@ -26,7 +26,7 @@ export function D3Footer({ reserveHref = "#reserve" }: { reserveHref?: string })
         <div className="d3-shell relative flex flex-wrap items-end justify-between gap-x-10 gap-y-10 py-16 md:gap-y-8 md:py-24">
           <div>
             <p className="d3-tag text-[var(--ink-3)]">
-              {FLEET.total} GPUs · {RATE.full} · {SITE.availability}
+              {FLEET.total} GPUs · {OWNERSHIP.short} · {SITE.availability}
             </p>
             <p className="mt-6 md:mt-5">
               <span className="d3-display block max-w-[5.8em] text-[clamp(2.75rem,9vw,8rem)] text-balance" data-load data-load-from="300">

@@ -6,10 +6,9 @@
  *   npm run market:probe -- runpod  # one
  */
 import { runRefresh } from "../../lib/market/refresh.ts";
-import { OUR_RATE } from "../../content/pricing.ts";
 
 const only = process.argv.slice(2).filter((a) => !a.startsWith("--"));
-const { results, snapshot } = await runRefresh({ ourRate: OUR_RATE, only });
+const { results, snapshot } = await runRefresh({ only });
 
 for (const r of results) {
   const tag = r.source.declined ? "declined" : r.error ? "FAIL   " : "ok     ";

@@ -12,20 +12,34 @@ export function scoreReservation(r: Partial<NewReservation>): { score: number; t
   let s = 0;
   const why: string[] = [];
 
-  // Capacity asked for. The fleet is 16; a full node or the whole fleet is
-  // the lead the business exists for.
+  // Capacity asked for. A full node or the whole fleet is the lead the
+  // business exists for. "16+" is kept so a row from the two-node form still
+  // scores rather than falling through as an evaluation.
   switch (r.gpuCount) {
-    case "16":
+    case "48":
       s += 35;
       why.push("whole fleet");
       break;
-    case "16+":
-      s += 25;
-      why.push("more than the fleet");
+    case "32":
+      s += 32;
+      why.push("four nodes");
+      break;
+    case "24":
+      s += 30;
+      why.push("three nodes");
+      break;
+    case "16":
+      s += 28;
+      why.push("two nodes");
       break;
     case "8":
-      s += 30;
+      s += 24;
       why.push("full node");
+      break;
+    case "48+":
+    case "16+":
+      s += 22;
+      why.push("more than the fleet");
       break;
     case "4":
       s += 15;
@@ -46,7 +60,10 @@ export function scoreReservation(r: Partial<NewReservation>): { score: number; t
   }
 
   // Term appetite, from the follow-up.
-  if (r.termInterest === "2-3y") {
+  if (r.termInterest === "4-5y") {
+    s += 24;
+    why.push("committed 4–5y");
+  } else if (r.termInterest === "2-3y") {
     s += 20;
     why.push("committed 2–3y");
   } else if (r.termInterest === "1y") {

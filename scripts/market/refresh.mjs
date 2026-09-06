@@ -7,11 +7,10 @@
  */
 import { runRefresh } from "../../lib/market/refresh.ts";
 import { getMarketStore } from "../../lib/market/store.ts";
-import { OUR_RATE } from "../../content/pricing.ts";
 
 const only = process.argv.slice(2).filter((a) => !a.startsWith("--"));
 const store = getMarketStore();
-const { results, snapshot } = await runRefresh({ ourRate: OUR_RATE, only });
+const { results, snapshot } = await runRefresh({ only });
 await store.saveRun(results, snapshot);
 
 const L = snapshot.legibility;

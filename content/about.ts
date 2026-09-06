@@ -8,7 +8,7 @@
  */
 
 import { SITE } from "@/config/site";
-import { FACILITY, FLEET } from "./operator";
+import { FACILITY, FLEET, OWNERSHIP, SUPPORT } from "./operator";
 
 export interface TeamMember {
   name: string;
@@ -25,7 +25,7 @@ export const TEAM: TeamMember[] = [];
 export const ABOUT = {
   eyebrow: "Who we are",
   heading: "Owner-operators, not a platform.",
-  body: `${SITE.name} is the people who bought the building, specified the power and ordered the hardware. ${FACILITY.kind} in the ${SITE.location.region}, ${FACILITY.ownership.toLowerCase()}. When you reserve, the person who reads the request is the person who will scope your job and the person who will pick up when something breaks.`,
+  body: `${SITE.name} is the people who bought the building and ordered the hardware. ${FACILITY.kind} in the ${SITE.location.region}, ${FACILITY.ownership.toLowerCase()}, ${OWNERSHIP.short.toLowerCase()}. When you reserve, the person who reads the request is the person who will scope your job and the person who will pick up when something breaks.`,
   principles: [
     {
       label: "Small, and knowable",
@@ -33,15 +33,15 @@ export const ABOUT = {
     },
     {
       label: "No landlord in the price",
-      body: "The rate is what an owned building and a measured electrical load support. It is not a promotional rate and it does not depend on anyone's fundraising.",
+      body: "What we can quote is what an owned building supports. It is not a promotional rate, and it does not depend on anyone's fundraising.",
     },
     {
       label: "Candour as a policy",
-      body: "We say what we do not have — customers, uptime history, certifications — on the page, so it is never a surprise in a procurement review.",
+      body: "We say what we do not have — customers, operating history, certifications in hand — on the page, so it is never a surprise in a procurement review.",
     },
     {
       label: "A person, every step",
-      body: "Receipt is automatic. Everything after it — position, call, term sheet, onboarding, support — is a named person, not a queue.",
+      body: `Receipt is automatic. Everything after it — position, call, term sheet, onboarding, ${SUPPORT.short.toLowerCase()} — is a named person, not a queue.`,
     },
   ],
   teamHeading: "The people",
